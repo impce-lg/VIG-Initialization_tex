@@ -1,0 +1,549 @@
+%  LaTeX support: latex@mdpi.com 
+%  In case you need support, please attach all files that are necessary for compiling as well as the log file, and specify the details of your LaTeX setup (which operating system and LaTeX version / tools you are using).
+
+%=================================================================
+\documentclass[journal,article,submit,moreauthors,pdftex]{Definitions/mdpi} 
+
+% If you would like to post an early version of this manuscript as a preprint, you may use preprint as the journal and change 'submit' to 'accept'. The document class line would be, e.g., \documentclass[preprints,article,accept,moreauthors,pdftex]{mdpi}. This is especially recommended for submission to arXiv, where line numbers should be removed before posting. For preprints.org, the editorial staff will make this change immediately prior to posting.
+
+%--------------------
+% Class Options:
+%--------------------
+%----------
+% journal
+%----------
+% Choose between the following MDPI journals:
+% acoustics, actuators, addictions, admsci, aerospace, agriculture, agriengineering, agronomy, ai, algorithms, allergies, analytica, animals, antibiotics, antibodies, antioxidants, applmech, applnano, applsci, arts, asc, asi, atmosphere, atoms, automation, axioms, batteries, bdcc, behavsci , beverages, bioengineering, biology, biomedicines, biomedinformatics, biomimetics, biomolecules, biosensors, bloods, brainsci, breath, buildings, cancers, carbon , catalysts, cells, ceramics, challenges, chemengineering, chemistry, chemosensors, chemproc, children, civileng, cleantechnol, climate, clockssleep, cmd, coatings, colloids, computation, computers, condensedmatter, cosmetics, cryptography, crystals, cyber, dairy, data, dentistry, dermatopathology, designs, diabetology, diagnostics, digital, diseases, diversity, drones, earth, econometrics, ecologies, economies, education, ejbc, ejihpe, electricity, electrochem, electronicmat, electronics, endocrines, energies, engproc, entropy, environments, environsciproc, epidemiologia, epigenomes, est, fermentation, fibers, fire, fishes, fluids, foods, forecasting, forests, fractalfract, fuels, futureinternet, futurephys, galaxies, games, gardens, gases, gastrointestdisord, gels, genealogy, genes, geohazards, geosciences, geriatrics, hazardousmatters, healthcare, hearts, heritage, highthroughput, horticulturae, humanities, hydrogen, hydrology, ijerph, ijfs, ijgi, ijms, ijtpp, immuno, informatics, information, infrastructures, inorganics, insects, instruments, inventions, iot, j, jcdd, jce, jcm, jcp, jcs, jdb, jfb, jfmk, jimaging, jintelligence, jlpea, jmmp, jmse, jne, jnt, jof, joitmc, journalmedia, jpm, jrfm, jsan, land, languages, laws, life, literature, livers, logistics, lubricants, machines, magnetochemistry, make, marinedrugs, materials, materproc, mathematics, mca, medicina, medicines, medsci, membranes, metabolites, metals, microarrays, micromachines, microorganisms, minerals, modelling, molbank, molecules, mps, mti, nanomaterials, ncrna, ijns, neurosci, neuroglia, nitrogen, notspecified, nutrients, obesities, oceans, ohbm, osteology, optics, organics, particles, pathogens, pharmaceuticals, pharmaceutics, pharmacy, philosophies, photonics, physics, plants, plasma, pollutants, polymers, polysaccharides, preprints , proceedings, processes, prosthesis, proteomes, psych, psychiatryint, publications, quantumrep, quaternary, qubs, radiation, reactions, recycling, religions, remotesensing, reprodmed, reports, resources, risks, robotics, safety, sci, scipharm, sensors, separations, sexes, signals, sinusitis, skins, smartcities, sna, societies, socsci, soilsystems, solids, sports, standards, stats, surfaces, surgeries, suschem, sustainability, world, symmetry, systems, technologies, telecom, test, tourismhosp, toxics, toxins, transplantology, tropicalmed, universe, urbansci, uro, vaccines, vehicles, vetsci, vibration, viruses, vision, water, wem, wevj, women
+
+%---------
+% article
+%---------
+% The default type of manuscript is "article", but can be replaced by: 
+% abstract, addendum, article, benchmark, book, bookreview, briefreport, casereport, changes, comment, commentary, communication, conceptpaper, conferenceproceedings, correction, conferencereport, expressionofconcern, extendedabstract, meetingreport, creative, datadescriptor, discussion, editorial, essay, erratum, hypothesis, interestingimages, letter, meetingreport, newbookreceived, obituary, opinion, projectreport, reply, retraction, review, perspective, protocol, shortnote, supfile, technicalnote, viewpoint
+% supfile = supplementary materials
+
+%----------
+% submit
+%----------
+% The class option "submit" will be changed to "accept" by the Editorial Office when the paper is accepted. This will only make changes to the frontpage (e.g., the logo of the journal will get visible), the headings, and the copyright information. Also, line numbering will be removed. Journal info and pagination for accepted papers will also be assigned by the Editorial Office.
+
+%------------------
+% moreauthors
+%------------------
+% If there is only one author the class option oneauthor should be used. Otherwise use the class option moreauthors.
+
+%---------
+% pdftex
+%---------
+% The option pdftex is for use with pdfLaTeX. If eps figures are used, remove the option pdftex and use LaTeX and dvi2pdf.
+
+%=================================================================
+\firstpage{1} 
+\makeatletter 
+\setcounter{page}{\@firstpage} 
+\makeatother
+\pubvolume{xx}
+\issuenum{1}
+\articlenumber{5}
+\pubyear{2020}
+\copyrightyear{2020}
+%\externaleditor{Academic Editor: name}
+\history{Received: date; Accepted: date; Published: date}
+%\updates{yes} % If there is an update available, un-comment this line
+
+%% MDPI internal command: uncomment if new journal that already uses continuous page numbers 
+%\continuouspages{yes}
+
+%------------------------------------------------------------------
+% The following line should be uncommented if the LaTeX file is uploaded to arXiv.org
+%\pdfoutput=1
+
+%=================================================================
+% Add packages and commands here. The following packages are loaded in our class file: fontenc, inputenc, calc, indentfirst, fancyhdr, graphicx,epstopdf, lastpage, ifthen, lineno, float, amsmath, setspace, enumitem, mathpazo, booktabs, titlesec, etoolbox, tabto, xcolor, soul, multirow, microtype, tikz, totcount, amsthm, hyphenat, natbib, hyperref, footmisc, url, geometry, newfloat, caption
+
+%=================================================================
+%% Please use the following mathematics environments: Theorem, Lemma, Corollary, Proposition, Characterization, Property, Problem, Example, ExamplesandDefinitions, Hypothesis, Remark, Definition, Notation, Assumption
+%% For proofs, please use the proof environment (the amsthm package is loaded by the MDPI class).
+
+%=================================================================
+% Full title of the paper (Capitalized)
+\Title{Initialization for Integration of Monocular Vision, INS and GNSS}
+
+% Author Orchid ID: enter ID or remove command
+\newcommand{\orcidauthorA}{0000-0000-000-000X} % Add \orcidA{} behind the author's name
+%\newcommand{\orcidauthorB}{0000-0000-000-000X} % Add \orcidB{} behind the author's name
+
+% Authors, for the paper (add full first names)
+\Author{Ronghe Jin $^{1,\dagger,\ddagger}$\orcidA{}, Firstname Lastname $^{1,\ddagger}$ and Firstname Lastname $^{2,}$*}
+
+
+% Authors, for metadata in PDF
+\AuthorNames{Firstname Lastname, Firstname Lastname and Firstname Lastname}
+
+% Affiliations / Addresses (Add [1] after \address if there is only one affiliation.)
+\address{%
+$^{1}$ \quad School of Geodesy and Geomatics, Wuhan University, Wuhan 430079, China; 773792173@qq.com\\
+$^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
+
+% Contact information of the corresponding author
+\corres{Correspondence: e-mail@e-mail.com; Tel.: (optional; include country code; if there are multiple corresponding authors, add author initials) +xx-xxxx-xxx-xxxx (F.L.)}
+
+% Current address and/or shared authorship
+\firstnote{Current address: Affiliation 3} 
+\secondnote{These authors contributed equally to this work.}
+% The commands \thirdnote{} till \eighthnote{} are available for further notes
+
+%\simplesumm{} % Simple summary
+
+%\conference{} % An extended version of a conference paper
+
+% Abstract (Do not insert blank lines, i.e. \\) 
+\abstract{A single paragraph of about 200 words maximum. For research articles, abstracts should give a pertinent overview of the work. We strongly encourage authors to use the following style of structured abstracts, but without headings: (1) Background: Place the question addressed in a broad context and highlight the purpose of the study; (2) Methods: Describe briefly the main methods or treatments applied; (3) Results: Summarize the article's main findings; and (4) Conclusion: Indicate the main conclusions or interpretations. The abstract should be an objective representation of the article, it must not contain results which are not presented and substantiated in the main text and should not exaggerate the main conclusions.}
+
+% Keywords
+\keyword{keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific to the article, yet reasonably common within the subject discipline.)}
+
+% The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
+%\PACS{J0101}
+%\MSC{}
+%\JEL{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Diversity
+%\LSID{\url{http://}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Applied Sciences:
+%\featuredapplication{Authors are encouraged to provide a concise description of the specific application or a potential application of the work. This section is not mandatory.}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Data:
+%\dataset{DOI number or link to the deposited data set in cases where the data set is published or set to be published separately. If the data set is submitted and will be published as a supplement to this paper in the journal Data, this field will be filled by the editors of the journal. In this case, please make sure to submit the data set as a supplement when entering your manuscript into our manuscript editorial system.}
+
+%\datasetlicense{license under which the data set is made available (CC0, CC-BY, CC-BY-SA, CC-BY-NC, etc.)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Only for the journal Toxins
+%\keycontribution{The breakthroughs or highlights of the manuscript. Authors can write one or two sentences to describe the most important part of the paper.}
+
+%\setcounter{secnumdepth}{4}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+There has been increasing demands for accurate  ego-motion estimation in the field of robots, such as unmanned aerial vehicles (UAVs) and autonomous driving. In order to achieve 6 degrees-of-freedom(DOF) pose of a robot in real time, various sensors such as Global Navigation Satellite System(GNSS, including GPS, BDS, GLONASS and GALILEO), inertial measurement units(IMU, also known as Inertial Navigation System, INS), and cameras have been used\cite{hongVisualInertialOdometryRobust2018}.  GNSS can estimate the global positions in ECEF frame without error accumulation, but it is low-rate and easily affected by the surroundings. IMU can get high-rate measurements of acceleration and angular velocity,  but it suffers from time-varying bias drift. Images contain rich features, which can be used to construct of the environment, and Visual SLAM may always be more precise than other sensors. Nevertheless, camera is vulnerable to motion blur from fast motions, the metric scale is ambiguous, and noises increases with time. As such sensors are mutually complementary\cite{huangOnlineInitializationExtrinsic2020}, multi-sensor fusion such as GNSS/INS coupled navigation, monocular visual-inertial odometry(VIO), GNSS/SLAM integration \cite{chenIntegrationLowcostGNSS2018}, Visual-Inertial-Magnetic combination \cite{wangVIMOVisualInertialMagneticNavigation2020}, has been active research topics in the last two decades. In recent years, integration of Monocular Vision, INS and GNSS has been attracting great interest among researchers because of their more impressive accuracy and robustness.
+
+The performance of multi-sensor fusion relies heavily on the initial states, including pose and velocity. Due to the nonlinearity of the fusion systems,  a good initialization can provide initial estimate near to the optimal solution, resulting in faster convergence of the optimization and low risk of a local minimum\cite{harsanyiMASATFastRobust2019}. The initialization of GNSS/INS integration is the alignment of the computational navigation frame and the local level navigation frame, and the core part of the initial alignment is to determine the attitude matrix between the body frame and reference navigation frame. For the low-cost INS, the noise threshold of gyros is near
+or higher than the Earth’s rotation rate($\approx{15^{\circ}/h}$). In this respect, the GNSS-aided velocity matching alignment is applicable to determine the initial state coupling GNSS and low-cost imu, but it will take tens of seconds to converge and may suffer from large initial attitude estimation error\cite{huangNewFastInMotion2018}. Another approach of fusion is the widely researched VIO, whose initialization task includes  estimation of the gravity direction, imu bias and monocular scale, which makes it a more challenging problem. Since pose estimation problem for visual-inertial systems may not have a unique solution depending on the types of motion\cite{martinelliClosedFormSolutionVisualInertial2014}, Bootstrapping a VIO system requires careful treatment, to avoid incorrect system parameters breaking the system. However, to the best of our knowledge, there is not much work in contemporary publications studied the initialization of Monocular Vision, INS, GNSS fusion. Such a system will take  an initial value from VIO initialization, and then align rotation to GNSS coordinate frame, i.e., the global frame. As a result, it can not overcome the shortcomings of VIO initialization.
+
+In this paper, we propose a novel approach for the initialization of Mono Vision, INS, GNSS integration.
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Related Work}
+
+It is believed that camera, INS, GNSS module will become standard configuration for most UAVs and autonomous vehicles, since such sensors are getting cheaper, smaller in size, lower in power consumption, and a wide spectrum of fusion algorithms or systems have been studied for their complementary. Research on robot state estimation is extensive. We focus on initialization methodology of vision, INS, GNSS related fusion algorithms. 
+
+INS is a self-contained system and can avoid interference from the outside environment, which determines the pose and velocity based on the measurements of the accelerometer and gyroscope with a deadreckoning procedure\cite{huangNewFastInMotion2018}. The coupling of INS and GNSS offers an accurate and complete measurement of the robot’s states, and thus has been applied in many navigation scenarios\cite{zhongAdaptiveInFlightAlignment2018}. Since the bias and noise level of low-cost INS are much greater than the Earth’s rotation rate, the roll and pitch can be obtained with stationary accelerometer measurements, however, the heading can not be determined, the GNSS-aided velocity matching alignment can be used to align the INS while in
+motion \cite{shinAccuracyImprovementLow}. The initial value of  accelerometer and gyroscope bias are set zeros, and they will converge with a long period of time, which depends on the INS noise level and the GNSS accuracy. Another approach derived from the optimization-based alignment for high-accuracy INS, the so-called dynamic attitude estimation based initial alignment (DAEBIA) methods, have been researched \cite{wuVelocityPositionIntegration2013b,changOptimizationbasedAlignmentStrapdown2016}. The authors of \cite{huangNewFastInMotion2018} proposed a new fast in-motion coarse alignment method, to speed up the coarse alignment process. 
+
+Monocular visual–inertial SLAM systems have gained much attention in the field of robot navigation and augmented reality\cite{xufumuAccurateInitialState2018}. Numerous modern image based VIO methods have been built, they can be categorized into filter-based \cite{tanskanenSemidirectEKFbasedMonocular2015,Bloesch2017Iterated,liHighprecisionConsistentEKFbased2013} and optimization-based(also known as Bundle Adjustment, BA) algorithms\cite{qinVINSMonoRobustVersatile2017,leuteneggerKeyframeBasedVisualInertialSLAM2013,mur-artalVisualInertialMonocularSLAM2017a}. Comparing to graph-based optimization, Filter-based algorithms are suitable for computing
+resource-constrained platforms\cite{huangOnlineInitializationExtrinsic2020}, but may lead to a suboptimal problem because of early fix of linearization
+points \cite{yangMonocularVisualInertial2017}. Therefore, optimization-based method is more accuracy than filter-based one theoretically, which makes it a trending framework over time. Some state-of-the-art optimization-based systems are VINS-Mono \cite{qinVINSMonoRobustVersatile2017}, OKVIS \cite{leuteneggerKeyframeBasedVisualInertialSLAM2013}, and VIORB \cite{mur-artalVisualInertialMonocularSLAM2017a}. In general, some of the initial parameters(velocity, gravity direction, and INS bias) are ignored or assumed to be known, or the system should stay stationary and horizontal before launch, which are not suitable for initialization of in-motion systems without prior information \cite{qinRobustInitializationMonocular2017}. The work in \cite{kneipDeterministicInitializationMetric2011} presents a deterministic closed-form solution for computing the gravity orientation and the visual scale of a VIO system, but the system is unstable due to the lacks of estimation for accelerometer and gyroscope biases. Similar to \cite{kneipDeterministicInitializationMetric2011}, the gyroscope bias in the initialization procedure of \cite{yangMonocularVisualInertial2017,martinelliClosedFormSolutionVisualInertial2014} is neglected, this kind of works above will lead to inaccurate initial states. The researchers of \cite{faesslerAutomaticReinitializationFailure2015} present a re-initialization and failure recovery algorithm assumes that the UAVs should keep horizontally at the beginning, to accomplish the initialization process. The method proposed in \cite{weissInertialOpticalFlow2015} requires that the initial attitude to be aligned with the
+gravity direction. Based on these early studies, pioneering works are proposed in \cite{mur-artalVisualInertialMonocularSLAM2017a} and \cite{qinRobustInitializationMonocular2017}. The initial estimation in \cite{mur-artalVisualInertialMonocularSLAM2017a} compute the scale, gravity direction, velocity and IMU biases for the visual-inertial full BA with a prior processing of keyframes by a monocular SLAM module. The work in \cite{qinRobustInitializationMonocular2017} also estimate the scale, gravity direction, velocity and gyroscope bias, but it ignores the accelerometer bias to ensure fast convergence, resulting in a lot of resources cost to refine the gravity and scale. As pointed out in \cite{martinelliClosedFormSolutionVisualInertial2014}, the gravity and accelerometer bias are difficult to be perfectly distinguished if without rich motion, the initialization systems in \cite{mur-artalVisualInertialMonocularSLAM2017a,qinRobustInitializationMonocular2017} may easily get ill-conditioned, leading to incorrect state solutions. To avoid mixing gravity and accelerometer bias, the authors of \cite{liRapidRobustMonocular2019} propose to use the detected vertical edges to estimate a better gravity. However, in order to obtain effective edges which are parallel to gravity, some human-made structures are needed. Among the works above, either vision or INS is not able to provide global measurements, hence VIO can only estimate the initial states in the local frame, which is often user-defined, it may be not suitable for robots in  long-term outdoor environments.
+
+Motivated by the purpose of robust, drift-free pose estimation in large-scale autonomous navigation, Vision/INS/GNSS coupled system(also known as GNSS-aided VIO, or Vision-aided GNSS/INS integration) has been a trending topic in recent years \cite{cioffiTightlycoupledFusionGlobal2020}. Early works in \cite{shunsukeGNSSINSOnboard2015,sahmoudiAnalysisNavigationSystem2016,kimTightlycoupledIntegrationGPS2016,adeelResearchPerformanceAnalysis2017,leeIntermittentGPSaidedVIO} carry out the estimation through filter-based methods, which only update the last state. Global position measurements were first aided for VIO with a pose-graph optimization estimator in \cite{mascaroGOMSFGraphOptimizationBased2018,qinGeneralOptimizationbasedFramework2019a}, while such algorithms are loosely-coupled ones which only align the independently processed relative pose from VIO to the global frame via pose-graph optimization. The authors of \cite{yuGPSaidedOmnidirectionalVisualInertial2019} put forward a tightly-coupled sliding window optimization for visual and inertial measurements with loosely-coupled GPS refinement. Differently from \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, the work in \cite{cioffiTightlycoupledFusionGlobal2020} tightly couple the GPS using the IMU pre-integration algorithm to efficiently derive the global positional factors, which allows adding multiple global factors per keyframe in the sliding window with insignificant extra computational cost. An initialization method of GPS-aided monocular visual-inertial system is introduced in \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, which is loosely-coupled, meaning that the initial states were estimated by the VIO initialization procedure and only then aligned to the global frame. The initialization method of \cite{leeIntermittentGPSaidedVIO} is similar to \cite{yuGPSaidedOmnidirectionalVisualInertial2019}. The alignment aim to compute the rotation from world frame(defined by VIO) to global frame based on the assumption that there is only yaw rotation between such two frames. 
+
+To . 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{System Preliminaries}
+This part starts with the definition of the notations. The inertial frame has its origin at the center of Earth and axes which are non-rotating with respect to the fixed stars, it is the measurement reference of IMU. We denote $\left( \cdot\right)_n$ as the navigation frame which has its origin coinciding with that of the sensor frame, and x-axis pointing towards geodetic north, z-axis parallel to the gravity direction, and y-axis completing a right-handed orthogonal frame, i.e. the north-east-down (NED) system. Therefore, the gravity vector can be written as $\boldsymbol{g} = \left[\begin{matrix} 0 & 0 & g \end{matrix}\right]^T$. In general, the navigation states include pose, velocity, and the features positions are represented in navigation frame, thus we can define $x_k$ as the state at time stamp$k$, instead of $x_k^n$. The IMU frame is an orthogonal axis set which is aligned to the vehicle body frame $\left( \cdot\right)_b$, hence we treat IMU frame as the body frame. We consider $\left( \cdot\right)_{c}$ as the camera frame, in which the normalized features can be expressed. The matrix $\boldsymbol{T}_{XY} = \left[\begin{matrix} \boldsymbol{R}_{XY} & \boldsymbol{t}_{XY} \end{matrix}\right]$ means the transformation from frame $Y$ to frame $X$, where $\boldsymbol{R}_{XY} \in SO(3)$ and $\boldsymbol{t}_{XY} \in \mathbb{R}^3$ are the rotation and translation respectively,  also can be used to transform the point coordinate in frame $Y$ to frame $X$, i.e., $\boldsymbol{p}_X = \boldsymbol{T}_{XY} \cdot \boldsymbol{p}_Y$. We regard $\boldsymbol{T}_{NB}$ as the body pose, $\boldsymbol{T}_{BC}$ as the transformation from camera frame $C$ to body frame $B$, also known as the extrinsic calibration. We use $\widetilde{(\cdot)}$to denote sensor measurements, which may be affected by noise and bias. With the assumption that the intrinsic parameter of the camera and extrinsic parameter between the camera and IMU has been calibrated before the algorithm, we provide some preliminary knowledge about the sensor measurements, models.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Factor Graph Optimization Model}
+We utilize the factor graph model as the optimization framework \cite{loeligerIntroductionFactorGraphs2008,dellaertFactorGraphsRobot2017}, which is one of most widely used graph models for the maximum a posteriori(MAP) estimation. Considering the general case, the inference problem $\boldsymbol{x}^{MAP} = \arg\max p(\boldsymbol{x|z})$ can be factorized as:
+\begin{equation}
+	p(\boldsymbol{x|z}) = \prod_{i=1}^{k} p(x_{k}|z_{k}) = \prod_{i=1}^{k} f_i(x_i)
+\end{equation}
+where $\boldsymbol{z}$ and $\boldsymbol{x}$ are measurements and states respectively, and with gaussian assumption we have $f_i(x_i) \propto exp \left( -\frac{1}{2}\Vert h_i(x_i) -z_i \Vert^2 \right)$, each factor $fi$ represents an error function that should be minimized, it is also a measurement unit in a graphical model known as a factor graph. Computing the MAP estimation is equivalent to running inference over the factor graph \cite{indelmanInformationFusionNavigation2013}. To avoid the involved computational complexity, we use the incremental smoothing developed in \cite{kaessISAM2IncrementalSmoothing2012}.
+
+\subsection{GNSS Positional Measurements}
+The GNSS measurement at epoch $k$ is given by the equation:
+\begin{equation}
+    \boldsymbol{z}_k^G = \boldsymbol{h}(\boldsymbol{x}_k)^G+\boldsymbol{n}^G
+\end{equation}
+where $h^G$ is the function linking the vehicle's position and the GNSS measurement $z^G_k$, and $n^G$ is the measurement noise. Given the lever-arm between GNSS antenna center and  the IMU measurement center, $h^G$ will contain the rotation\cite{farrellAidedNavigationGPS2008}. Therefore, if the lever-arm is a zero vector, i.e., GNSS antenna and IMU share the same center, GNSS measurements have no contribution for rotation estimation. 
+
+\subsection{Monocular Vision}
+We use a monocular pinhole camera model with a known calibration matrix $\boldsymbol{K}$ to predict the image observation, via the non-linear function $\pi$: 
+\begin{equation}
+    \boldsymbol{\pi}(\boldsymbol{x,l}) = \boldsymbol{K}
+    \left[\begin{matrix} \boldsymbol{R}_{CN} & \boldsymbol{t}_{CN} \end{matrix}\right]{_N}\boldsymbol{l}
+\end{equation}
+where $\boldsymbol{K}$ is the camera intrinsic calibration. $\boldsymbol{x}$ is the inverse of camera pose, $\boldsymbol{l}$ represents the landmark in the navigation frame, they are states to be estimated. Both landmark and predicted image observation are expressed in homogeneous coordinates. Given the known image measurement $\boldsymbol{z}(u,v)$, the re-projection error is:
+\begin{equation}
+    \boldsymbol{e}(\boldsymbol{x,l}) = \boldsymbol{z} - \boldsymbol{\pi}(\boldsymbol{x,l})
+\end{equation}
+By minimizing the re-projection error, we can recover the relative pose up to an unknown scale within multiple frames. With the known calibration between body and camera frame, we can transform the camera pose to the navigation state. Such problem is known as full SLAM or BA, requires adding the unknown landmarks into the optimization. Alternatively, one can apply the multi-view geometry, instead of the re-projection equation, to avoid the including the unknown landmarks. 
+
+\subsection{IMU Measurements}
+\unskip
+\subsubsection{IMU Kinematic Model}
+An IMU sensor usually contains a 3-axis gyroscope sensor and a 3-axis accelerometer, which can measure the angular velocity and the acceleration of the inertial sensor, i.e., the body frame, with respect to inertial frame. IMU provides outputs at a much higher rate than GNSS and visual measurements. IMU measurements are polluted by two error sources: a white noise $\boldsymbol{\eta}(t)$, and a random walk slow time-varying bias $\boldsymbol{b}(t)$. Therefore, the IMU measurement model can be constructed as:
+\begin{equation}
+    {_B}\widetilde{\boldsymbol{\omega}}_{NB}(t) = {_B}\boldsymbol{\omega}{_NB}(t) + \boldsymbol{b}_g(t) + \boldsymbol{\eta}_g(t)
+\end{equation}
+\begin{equation}
+    {_B}\widetilde{\boldsymbol{a}}(t) = \boldsymbol{R}_{NB}^T(t)({_N}\boldsymbol{a}(t)-{_N}\boldsymbol{g}) + \boldsymbol{b}_a(t) + \boldsymbol{\eta}_a(t)
+\end{equation}
+where ${_B}\widetilde{\boldsymbol{\omega}}_{NB}(t)$ and ${_B}\widetilde{\boldsymbol{a}}(t)$ are respectively the measured angular velocity and linear acceleration in the body frame $b$, the real angular velocity $\boldsymbol{\omega}(t)$ and linear acceleration $\boldsymbol{a}(t)$ are what we need. $\boldsymbol{R}_{NB}$ maps a point or vector from body frame to navigation frame $N$, ${_N}\boldsymbol{g}$ is gravity under $N$ frame. We ignore effects due to earth’s rotation, which means we can assume $N$ is an inertial frame. The time-varying bias $\boldsymbol{b}_g(t)$ and $\boldsymbol{b}_a(t)$ are modeled as:
+\begin{equation}
+    \boldsymbol{\dot{b}}_g(t) = \boldsymbol{\eta}_{b_g}(t),
+    \boldsymbol{\dot{b}}_a(t) = \boldsymbol{\eta}_{b_a}(t)
+\end{equation}
+
+To infer the motion state, we utilize the kinematic model in \cite{forsterOnManifoldPreintegrationRealTime2017}:
+\begin{equation}
+	\left\{
+	\begin{aligned}
+		{_N}\boldsymbol{\dot{R}}_{NB} & = \boldsymbol{R}_{NB} \cdot (_{B}\boldsymbol{\omega}){\land} \\
+		{_N}\boldsymbol{\dot{v}}^n   & = {_N}\boldsymbol{a}                                      \\
+		{_N}\boldsymbol{\dot{p}}   & = {_N}\boldsymbol{v}                                        
+	\end{aligned}
+	\right.,\quad
+	where \quad \boldsymbol{\omega}^{\land}=\left[
+		\begin{matrix}
+			0         & -\omega_z & \omega_y  \\
+			\omega_z  & 0         & -\omega_x \\
+			-\omega_y & \omega_x  & 0         
+		\end{matrix}
+    \right]
+    \label{IMU-kinematic-model}
+\end{equation}
+
+During the short time interval $\left[t,t+\Delta{t}\right]$,  we can assume that ${_N}\boldsymbol{a}$ and ${_B}\boldsymbol{\omega}_{NB}$ stay constant. We can obtain the pose and velocity at time $t+\Delta{t}$ via integrating Eq. (\ref{IMU-kinematic-model}):
+\begin{equation}
+	\boldsymbol{R}(t+\Delta{t})  = \boldsymbol{R}(t) Exp \left((\widetilde{\boldsymbol{\omega}}(t) - \boldsymbol{b}_g(t) - \boldsymbol{\eta}_g(t)) \Delta{t} \right)
+	\label{model-integration-1}
+\end{equation}
+\begin{equation}
+	\boldsymbol{v}(t+\Delta{t}) = \boldsymbol{v}(t) + \boldsymbol{g}\Delta{t} + \boldsymbol{R}(t) \left(  \widetilde{\boldsymbol{a}}(t) - \boldsymbol{b}_a(t) - \boldsymbol{\eta}_a(t) \right) \Delta{t}
+	\label{model-integration-2}
+\end{equation}
+\begin{equation}
+	\boldsymbol{p}(t+\Delta{t}) = \boldsymbol{p}(t) + \boldsymbol{v}(t)\Delta{t} + \frac{1}{2}\boldsymbol{g}\Delta{t}^2 + \frac{1}{2} \boldsymbol{R}(t) \left(  \widetilde{{_N}\boldsymbol{a}}(t) - \boldsymbol{b}_a(t) - \boldsymbol{\eta}_a(t) \right) \Delta{t}^2
+	\label{model-integration-3}
+\end{equation}
+We have substituted IMU measurements into the equations, and we dropped the coordinate frame subscripts for readability. 
+
+\subsubsection{IMU Pre-integration on Manifold}
+Assuming that IMU is synchronized with the camera and provides measurements at discrete times $k$, we can iterate the integration Eqs. (\ref{model-integration-1}-\ref{model-integration-3}). To avoid recompute the integration whenever the linearization point changes, we follow \cite{forsterOnManifoldPreintegrationRealTime2017} and apply the following relative motion increments between two consecutive keyframes that are independent of the pose and velocity at $t_i$:
+\begin{equation}
+	\Delta{\boldsymbol{R}_{ij}} \doteq \boldsymbol{R}_i^T \boldsymbol{R}_j = \prod_{k=i}^{j-1} Exp \left((\widetilde{\boldsymbol{\omega}}_k - \boldsymbol{b}_{g_k} - \boldsymbol{\eta}_{g_k}) \Delta{t} \right)
+\end{equation}
+\begin{equation}
+	\Delta{\boldsymbol{v}_{ij}} \doteq \boldsymbol{R}_i^T(\boldsymbol{v}_j-\boldsymbol{v}_i-\boldsymbol{g}\Delta{t_{ij}}) = \sum_{k=i}^{j-1}\Delta{\boldsymbol{R}_{ik}} \left( \widetilde{\boldsymbol{a}}_k - \boldsymbol{b}_{a_k} - \boldsymbol{\eta}_{a_k} \right) \Delta{t}
+\end{equation}
+\begin{equation}
+	\Delta{\boldsymbol{p}_{ij}} \doteq \boldsymbol{R}_i^T(\boldsymbol{p}_j-\boldsymbol{p}_i-\boldsymbol{v}_i\Delta{t_{ij}}-\frac{1}{2}\boldsymbol{g}\Delta{t_{ij}^2}) = \sum_{k=i}^{j-1} \left[ \Delta{\boldsymbol{v}_{ik}}\Delta{t} + \frac{1}{2}\Delta{\boldsymbol{R}_{ik}}(\widetilde{\boldsymbol{a}}_k - \boldsymbol{b}_{a_k} - \boldsymbol{\eta}_{a_k})\Delta{t}^2 \right] 
+\end{equation}
+
+As the noise covariance has a strong influence on the MAP estimator, it is of paramount importance to accurately model the noise covariance. Defining the noise vector as $ \boldsymbol{\eta}_{ik}^{\Delta} \doteq \left[\begin{matrix} \delta{\boldsymbol{\phi}_{ij}^T} & \delta{\boldsymbol{v}_{ij}^T} & \delta{\boldsymbol{p}_{ij}^T} \end{matrix}\right]^T $, the covariance propagation can be written in iterative form:
+\begin{equation}
+	\delta{\boldsymbol{\phi}_{ij}} = \Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}\delta{\boldsymbol{\phi}_{i,j-1}} + \boldsymbol{J}_r^{j-1} \boldsymbol{\eta}_{j-1}^{gd}\Delta{t} 
+	\label{nosie-equ1}
+\end{equation}
+\begin{equation}
+	\delta{\boldsymbol{v}_{ij}} = \delta{\boldsymbol{v}_{i,j-1}} - \Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}(\widetilde{\boldsymbol{a}}_{j-1}-\boldsymbol{b}_i^a)^{\land}\delta{\boldsymbol{\phi}_{i,j-1}}\Delta{t} + \Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}\boldsymbol{\eta}_{j-1}^{ad}\Delta{t}
+	\label{nosie-equ2}
+\end{equation}
+\begin{equation}
+	\delta{\boldsymbol{p}_{ij}} = \delta{\boldsymbol{p}_{i,j-1}} + \delta{\boldsymbol{v}_{i,j-1}}\Delta{t}  - 
+	\frac{1}{2}\Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}(\widetilde{\boldsymbol{a}}_{j-1}-\boldsymbol{b}_i^a)^{\land}\delta{\boldsymbol{\phi}_{i,j-1}}\Delta{t}^2 + 
+	\frac{1}{2}\Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}\boldsymbol{\eta}_{j-1}^{ad}\Delta{t}^2
+	\label{nosie-equ3}
+\end{equation}
+where $\boldsymbol{J}_r$ is the right Jacobian of $SO(3)$, $\boldsymbol{\eta}_{k}^{d}$ is the  discrete-time noise of IMU, whose covariance is a function of the sampling rate. Defining the noise as $\boldsymbol{\eta}_{k}^{d} = \left[ \begin{matrix} \boldsymbol{\eta}_{k}^{gd} & \boldsymbol{\eta}_{k}^{ad}\end{matrix}\right]$, the corresponding covariance as $\boldsymbol{P}_{k}$, we can write the noise equations (\ref{nosie-equ1}-\ref{nosie-equ3}) in compact matrix form, and the preintegrated measurement covariance iteratively:
+\begin{equation}
+	\boldsymbol{\eta}_{ij}^{\Delta} = \boldsymbol{A}_{j-1}\boldsymbol{\eta}_{i,j-1}^{\Delta} + \boldsymbol{B}_{j-1} \boldsymbol{\eta}_{j-1}^{d}
+\end{equation}
+\begin{equation}
+	\boldsymbol{P}_{ij} = \boldsymbol{A}_{j-1}\boldsymbol{P}_{i,j-1}\boldsymbol{A}_{j-1}^T + \boldsymbol{B}_{j-1} \boldsymbol{Q}_{\eta} \boldsymbol{B}_{j-1}^T
+\end{equation}
+
+We consider that the biases during the pre-integration period between the interval $\Delta{t}$ is constant. However, the biases change slightly  by a small amount $\delta\boldsymbol{b}$ in the optimization window. To avoid the time -expensive recomputation when the bias changes, we can update the states using a first-order expansion: 
+\begin{equation}
+	\boldsymbol{R}_{NB}^{i+1} = \boldsymbol{R}_{NB}^{i} \Delta{\boldsymbol{R}_{i,i+1}} Exp \left(\boldsymbol{J}_{\Delta\boldsymbol{R}}^{\boldsymbol{b}_g}\delta\boldsymbol{b}_g^i \right)
+\end{equation}
+\begin{equation}
+	{_N}\boldsymbol{v}_{B}^{i+1} = {_N}\boldsymbol{v}_{B}^{i} + {_N}\boldsymbol{g}\Delta{t}_{i,i+1} + \boldsymbol{R}_{NB}^i(\Delta\boldsymbol{v}_{i,i+1}+\boldsymbol{J}_{\Delta\boldsymbol{v}}^{\boldsymbol{b}_g}\delta\boldsymbol{b}_g^i+\boldsymbol{J}_{\Delta\boldsymbol{v}}^{\boldsymbol{b}_a}\delta\boldsymbol{b}_a^i)
+	\label{prein-vel}
+\end{equation}
+\begin{equation}
+	{_N}\boldsymbol{p}_{B}^{i+1} = {_N}\boldsymbol{p}_{B}^{i} + {_N}\boldsymbol{v}_{B}^{i}\Delta{t}_{i,i+1} + \frac{1}{2}{_N}\boldsymbol{g}\Delta{t}_{i,i+1}^2 + \boldsymbol{R}_{NB}^i(\Delta\boldsymbol{p}_{i,i+1}+\boldsymbol{J}_{\Delta\boldsymbol{p}}^{\boldsymbol{b}_g}\delta\boldsymbol{b}_g^i+\boldsymbol{J}_{\Delta\boldsymbol{p}}^{\boldsymbol{b}_a}\delta\boldsymbol{b}_a^i)
+	\label{prein-pos}
+\end{equation}
+Here, the Jacobians can be precomputed during the pre-integration.
+
+\section{Vision/INS/GNSS Initialization}
+We use monocular vision, low-cost INS and GNSS for navigation, the methods in \cite{qinRobustInitializationMonocular2017} and \cite{mur-artalVisualInertialMonocularSLAM2017a} offer the use for reference to our algorithm, and both are state-of-the-art VIO systems. In general, the initialization for VIO estimate the gyroscope bias as the first step, and then formulate system equations including states such as vision scale, accelerometer biases, gravity and velocity. Since the system may easily get ill-conditioned due to the mixture of gravity and accelerometer bias. Such problem will result incorrect solutions, which may break the system. In this paper, using the GNSS observations will decouple vision scale, accelerometer bias and gravity with respective computation. 
+
+\subsection{Initial State by GNSS}
+To estimate the global state in $N$ frame, we can directly utilize the initial position and velocity  by GNSS-only measurements. Since GNSS sensor is 3-DOF without rotation information, for the in-motion vehicle, we can use GNSS velocity to obtain the approximate attitude angle to form the rotation matrix. However, we can not achieve roll via GNSS velocity, due to the mounting structure of INS relative to the body, resulting such angle is always roughly set zero. Only pitch and yaw angle can be computed as following:
+\begin{equation}
+	\theta = tan^{-1} \left( \frac{-v_D}{\sqrt{v_E^2+v_N^2}} \right)
+\end{equation}
+\begin{equation}
+	\phi = tan^{-1} \left( \frac{v_E}{v_N} \right)
+\end{equation}
+where $\theta$ and $\phi$ is pitch and yaw angle respectively, whose accuracy depends on the accuracy of GNSS velocity. Another initial attitude determination method is introduced in \cite{Godha2006PerformanceEO} by accelerometer levelling, which uses knowledge of gravity sensed by each accelerometer, under static conditions. 
+
+\subsection{Short term GNSS/INS Fusion}
+The GNSS measurements and IMU pre-integration is used for a short term optimization with the factor graph model, which provides the state at each IMU sampling epoch, which is more accurate than the previous step. To achieve a fast initialization, the period may last for few seconds. In such a short time, the biases of IMU can not get a convergence, thus a further computation is needed. 
+
+The estimation and refinement of the gravity orientation is the essential step for current VIO system, due to the unknown initial attitude of the body. The refined gravity orientation is used to determine the attitude\cite{qinRobustInitializationMonocular2017}. As a result, the mixing bias error may lead to an incorrect gravity direction, which will result in attitude error. For most vehicle applications, a heavy dynamic of the body may only occurs along $z$ axis, resulting a large change just on yaw angle, which means the $z$ may always be approximately parallel to gravity vector. In this paper, given known axes of the IMU frame, one can correct the gravity directly with the optimized initial state. 
+
+\subsection{Vision Structure with Initial States}
+The initialization is based on loosely-coupled system, vision structure is needed to estimate a graph of camera poses and feature positions. Our method borrows idea from \cite{qinRobustInitializationMonocular2017}, which maintains several
+spacial-separate frames selected by enough parallax near the neighbor. We set rotation via Five-point method, to the chosen two frames which contain sufficient feature parallax. Differently from \cite{qinRobustInitializationMonocular2017}, the translation between such two frames is computed by IMU pre-integration retraction \cite{dellaertFactorGraphsRobot2017} based on GNSS/INS optimization:
+\begin{equation}
+	{_N}\boldsymbol{p}_{C} = {_N}\boldsymbol{p}_{B_{\star}} + \boldsymbol{R}_{NC}\cdot{_C}\boldsymbol{p}_{B}
+	\label{tranB-transC}
+\end{equation} 
+Such setting allows us to assign the structure a rough scale from GNSS/INS integration, whose metric measurements has a high accuracy. As the representation in \cite{qinRobustInitializationMonocular2017}, a less-than-$30\%$ scale error would initialize the system successfully. With the triangulation, Perspective-n-Point (PnP) estimation, and a global full bundle adjustment successively, we get all frame poses and feature positions under $N$ frame.
+
+\subsection{Gyroscope Bias Estimation}
+Given the known relative rotation between two consecutive frames, and the preintegrated IMU rotation, we can estimate the gyroscope bias. Utilizing the camera poses by vision structure procedure and assuming a negligible bias change, we compute a constant gyroscope bias $\boldsymbol{b}_g$ by minimizing the residual errors between the gyroscope integration and relative rotation from the vision: 
+\begin{equation}
+	\arg \min \limits_{\boldsymbol{b}_g} = \sum_{i=1}^{n-1}\Vert Log \left( (\Delta{\boldsymbol{R}_{i,i+1}}Exp(\boldsymbol{J}_{\Delta{\boldsymbol{R}}}^g\boldsymbol{b}_g))^T \boldsymbol{R}_{BN}^{i+1}\boldsymbol{R}_{NB}^{i}  \right) \Vert^2
+	\label{gyro-bias}
+\end{equation}
+where $n$ is the number of the keyframes, $\boldsymbol{R}_{NB}^{(\cdot)} = \boldsymbol{R}_{NC}^{(\cdot)}\boldsymbol{R}_{CB} $ is the body rotation by the operation of the computed vision structure rotation $\boldsymbol{R}_{NC}^{(\cdot)}$ and the calibration $\boldsymbol{R}_{CB}$. Solving the equation (\ref{gyro-bias}) by least-square with a zero bias seed, we can update the pre-integration $\Delta{\boldsymbol{R}_{ij}}$, $\Delta{\boldsymbol{v}_{ij}}$, $\Delta{\boldsymbol{p}_{ij}}$ with respect to the estimated $\boldsymbol{b}_g$. 
+
+\subsection{Accelerometer Bias Estimation}
+With the estimated gyroscope bias and initial states, we can substitute (\ref{tranB-transC}) to (\ref{prein-pos}), it follows:
+\begin{equation}
+	{_N}\boldsymbol{p}_C^{i+1} = {_N}\boldsymbol{p}_C^{i} + {_N}\boldsymbol{v}_{B}^{i}\Delta{t}_{i,i+1} + \frac{1}{2}{_N}\boldsymbol{g}\Delta{t}_{i,i+1}^2 + (\boldsymbol{R}_{NC}^i-\boldsymbol{R}_{NC}^{i+1}){_C}\boldsymbol{p}_B +(\boldsymbol{R}_{NB}^i\Delta{p}_{i,i+1}+\boldsymbol{J}_{\Delta\boldsymbol{p}}^{\boldsymbol{b}_a}\delta\boldsymbol{b}_a^i)
+	\label{prein-pos-C}
+\end{equation}
+Our goal is to compute the accelerometer bias by solving a linear system of equations. One natural way to perform the computation is to substitute the initial velocities by GNSS/INS fusion into (\ref{prein-pos-C}) .To avoid noises of $N$ velocities, and reduce complexity, we consider two relations (\ref{prein-pos-C}) between three consecutive keyframes and utilize velocity relation in (\ref{prein-vel}), resulting in the following expression: 
+\begin{equation}
+	\boldsymbol{A}(i) \cdot \boldsymbol{b}_a = \boldsymbol{B}(i)
+	\label{bias-equt}
+\end{equation}
+Writing keyframes $i$, $i + 1$, $i + 2$ as 1,2,3 for clarity of notation, we have:
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{A}(i) = & -\boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB} \boldsymbol{J}_{\Delta\boldsymbol{p}_{12}}^{\boldsymbol{b}_a} \Delta{t}_{23} + \boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB} \boldsymbol{J}_{\Delta\boldsymbol{v}_{12}}^{\boldsymbol{b}_a} \Delta{t}_{12}\Delta{t}_{23} + \boldsymbol{R}_{NC}^2\boldsymbol{R}_{CB} \boldsymbol{J}_{\Delta\boldsymbol{p}_{23}}^{\boldsymbol{b}_a} \Delta{t}_{12} \\
+		\boldsymbol{B}(i) = & (\boldsymbol{R}_{NC}^3-\boldsymbol{R}_{NC}^2)\boldsymbol{t}_{CB}\Delta{t}_{12} + (\boldsymbol{R}_{NC}^1-\boldsymbol{R}_{NC}^2)\boldsymbol{t}_{CB}\Delta{t}_{23}\\
+		& +\boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB}\Delta\boldsymbol{p}_{12}\Delta{t}_{23} - \boldsymbol{R}_{NC}^2\boldsymbol{R}_{CB}\Delta\boldsymbol{p}_{23}\Delta{t}_{12} -\boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB}\Delta\boldsymbol{v}_{12}\Delta{t}_{12}\Delta{t}_{23}\\
+		&-\frac{1}{2}{_N}\boldsymbol{g}\Delta{t}_{12}\Delta{t}_{23}(\Delta{t}_{12}+\Delta{t}_{23}) \\
+		&-({_N}\boldsymbol{p}_C^2-{_N}\boldsymbol{p}_C^1)\Delta{t}_{23}-({_N}\boldsymbol{p}_C^2-{_N}\boldsymbol{p}_C^3)\Delta{t}_{12}
+	\end{aligned}
+\end{equation}
+Stacking all relations between three consecutive keyframes (\ref{bias-equt}) we form an overdetermined linear system of equations $\boldsymbol{A}_{3(n-2)\times 3}\boldsymbol{b}_{3\times1} = \boldsymbol{B}_{3(n-2)\times1}$ which can be solved via least-square. We can calculate the condition number to check whether the problem is well-conditioned.
+
+\subsection{Overall Optimization}
+With the initial poses, velocities, feature positions, estimated biases, we can perform a overall optimization with all states. 
+
+
+\section{Experiments}
+
+
+
+Bulleted lists look like this:
+\begin{itemize}[leftmargin=*,labelsep=5.8mm]
+\item	First bullet
+\item	Second bullet
+\item	Third bullet
+\end{itemize}
+
+Numbered lists can be added as follows:
+\begin{enumerate}[leftmargin=*,labelsep=4.9mm]
+\item	First item 
+\item	Second item
+\item	Third item
+\end{enumerate}
+
+The text continues here.
+
+\subsection{Figures, Tables and Schemes}
+
+All figures and tables should be cited in the main text as Figure 1, Table 1, etc.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=2 cm]{Definitions/logo-mdpi}
+\caption{This is a figure, Schemes follow the same formatting. If there are multiple panels, they should be listed as: (\textbf{a}) Description of what is contained in the first panel. (\textbf{b}) Description of what is contained in the second panel. Figures should be placed in the main text near to the first time they are cited. A caption on a single line should be centered.}
+\end{figure}   
+ 
+Text
+
+Text
+
+\begin{table}[H]
+\caption{This is a table caption. Tables should be placed in the main text near to the first time they are cited.}
+\centering
+%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
+\begin{tabular}{ccc}
+\toprule
+\textbf{Title 1}	& \textbf{Title 2}	& \textbf{Title 3}\\
+\midrule
+entry 1		& data			& data\\
+entry 2		& data			& data\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Text
+
+Text
+
+%\begin{listing}[H]
+%\caption{Title of the listing}
+%\rule{\textwidth}{1pt}
+%\raggedright Text of the listing. In font size footnotesize, small, or normalsize. Preferred format: left aligned and single spaced. Preferred border format: top border line and bottom border line.
+%\rule{\textwidth}{1pt}
+%\end{listing}
+
+
+\subsection{Formatting of Mathematical Components}
+
+This is an example of an equation:
+
+\begin{equation}
+a + b = c
+\end{equation}
+%% If the documentclass option "submit" is chosen, please insert a blank line before and after any math environment (equation and eqnarray environments). This ensures correct linenumbering. The blank line should be removed when the documentclass option is changed to "accept" because the text following an equation should not be a new paragraph. 
+
+Please punctuate equations as regular text. Theorem-type environments (including propositions, lemmas, corollaries etc.) can be formatted as follows:
+%% Example of a theorem:
+\begin{Theorem}
+Example text of a theorem.
+\end{Theorem}
+
+The text continues here. Proofs must be formatted as follows:
+
+%% Example of a proof:
+\begin{proof}[Proof of Theorem 1]
+Text of the proof. Note that the phrase `of Theorem 1' is optional if it is clear which theorem is being referred to.
+\end{proof}
+The text continues here.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Discussion}
+
+Authors should discuss the results and how they can be interpreted in perspective of previous studies and of the working hypotheses. The findings and their implications should be discussed in the broadest context possible. Future research directions may also be highlighted.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Materials and Methods}
+
+Materials and Methods should be described with sufficient details to allow others to replicate and build on published results. Please note that publication of your manuscript implicates that you must make all materials, data, computer code, and protocols associated with the publication available to readers. Please disclose at the submission stage any restrictions on the availability of materials or information. New methods and protocols should be described in detail while well-established methods can be briefly described and appropriately cited.
+
+Research manuscripts reporting large datasets that are deposited in a publicly available database should specify where the data have been deposited and provide the relevant accession numbers. If the accession numbers have not yet been obtained at the time of submission, please state that they will be provided during review. They must be provided prior to publication.
+
+Interventionary studies involving animals or humans, and other studies require ethical approval must list the authority that provided approval and the corresponding ethical approval code. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusions}
+
+This section is not mandatory, but can be added to the manuscript if the discussion is unusually long or complex.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Patents}
+This section is not mandatory, but may be added if there are patents resulting from the work reported in this manuscript.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\vspace{6pt} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% optional
+%\supplementary{The following are available online at \linksupplementary{s1}, Figure S1: title, Table S1: title, Video S1: title.}
+
+% Only for the journal Methods and Protocols:
+% If you wish to submit a video article, please do so with any other supplementary material.
+% \supplementary{The following are available at \linksupplementary{s1}, Figure S1: title, Table S1: title, Video S1: title. A supporting video article is available at doi: link.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\authorcontributions{For research articles with several authors, a short paragraph specifying their individual contributions must be provided. The following statements should be used ``Conceptualization, X.X. and Y.Y.; methodology, X.X.; software, X.X.; validation, X.X., Y.Y. and Z.Z.; formal analysis, X.X.; investigation, X.X.; resources, X.X.; data curation, X.X.; writing--original draft preparation, X.X.; writing--review and editing, X.X.; visualization, X.X.; supervision, X.X.; project administration, X.X.; funding acquisition, Y.Y. All authors have read and agreed to the published version of the manuscript.'', please turn to the  \href{http://img.mdpi.org/data/contributor-role-instruction.pdf}{CRediT taxonomy} for the term explanation. Authorship must be limited to those who have contributed substantially to the work reported.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\funding{Please add: ``This research received no external funding'' or ``This research was funded by NAME OF FUNDER grant number XXX.'' and  and ``The APC was funded by XXX''. Check carefully that the details given are accurate and use the standard spelling of funding agency names at \url{https://search.crossref.org/funding}, any errors may affect your future funding.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\acknowledgments{In this section you can acknowledge any support given which is not covered by the author contribution or funding sections. This may include administrative and technical support, or donations in kind (e.g., materials used for experiments).}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\conflictsofinterest{Declare conflicts of interest or state ``The authors declare no conflict of interest.'' Authors must identify and declare any personal circumstances or interest that may be perceived as inappropriately influencing the representation or interpretation of reported research results. Any role of the funders in the design of the study; in the collection, analyses or interpretation of data; in the writing of the manuscript, or in the decision to publish the results must be declared in this section. If there is no role, please state ``The funders had no role in the design of the study; in the collection, analyses, or interpretation of data; in the writing of the manuscript, or in the decision to publish the results''.} 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% optional
+\abbreviations{The following abbreviations are used in this manuscript:\\
+
+\noindent 
+\begin{tabular}{@{}ll}
+MDPI & Multidisciplinary Digital Publishing Institute\\
+DOAJ & Directory of open access journals\\
+TLA & Three letter acronym\\
+LD & linear dichroism
+\end{tabular}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% optional
+\appendixtitles{no} % Leave argument "no" if all appendix headings stay EMPTY (then no dot is printed after "Appendix A"). If the appendix sections contain a heading then change the argument to "yes".
+\appendix
+\section{}
+\unskip
+\subsection{}
+The appendix is an optional section that can contain details and data supplemental to the main text. For example, explanations of experimental details that would disrupt the flow of the main text, but nonetheless remain crucial to understanding and reproducing the research shown; figures of replicates for experiments of which representative data is shown in the main text can be added here if brief, or as Supplementary data. Mathematical proofs of results not central to the paper can be added as an appendix.
+
+\section{}
+All appendix sections must be cited in the main text. In the appendixes, Figures, Tables, etc. should be labeled starting with `A', e.g., Figure A1, Figure A2, etc. 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\reftitle{References}
+
+% Please provide either the correct journal abbreviation (e.g. according to the “List of Title Word Abbreviations” http://www.issn.org/services/online-services/access-to-the-ltwa/) or the full name of the journal.
+% Citations and References in Supplementary files are permitted provided that they also appear in the reference list here. 
+
+%=====================================
+% References, variant A: external bibliography
+%=====================================
+\externalbibliography{yes}
+\bibliography{Bib}
+
+%=====================================
+% References, variant B: internal bibliography
+%=====================================
+% \begin{thebibliography}{999}
+% % Reference 1
+% \bibitem[Author1(year)]{harsanyiMASATFastRobust2019}
+% Author1, T. The title of the cited article. {\em Journal Abbreviation} {\bf 2008}, {\em 10}, 142--149.
+% % Reference 2
+% \bibitem[Author2(year)]{harsanyiMASATFastRobust2019}
+% Author2, L. The title of the cited contribution. In {\em The Book Title}; Editor1, F., Editor2, A., Eds.; Publishing House: City, Country, 2007; pp. 32--58.
+% \end{thebibliography}
+
+% The following MDPI journals use author-date citation: Arts, Econometrics, Economies, Genealogy, Humanities, IJFS, JRFM, Laws, Religions, Risks, Social Sciences. For those journals, please follow the formatting guidelines on http://www.mdpi.com/authors/references
+% To cite two works by the same author: \citeauthor{harsanyiMASATFastRobust2019-1a} (\citeyear{harsanyiMASATFastRobust2019-1a}, \citeyear{harsanyiMASATFastRobust2019-1b}). This produces: Whittaker (1967, 1975)
+% To cite two works by the same author with specific pages: \citeauthor{harsanyiMASATFastRobust2019-3a} (\citeyear{harsanyiMASATFastRobust2019-3a}, p. 328; \citeyear{harsanyiMASATFastRobust2019-3b}, p.475). This produces: Wong (1999, p. 328; 2000, p. 475)
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% optional
+\sampleavailability{Samples of the compounds ...... are available from the authors.}
+
+%% for journal Sci
+%\reviewreports{\\
+%Reviewer 1 comments and authors’ response\\
+%Reviewer 2 comments and authors’ response\\
+%Reviewer 3 comments and authors’ response
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{document}
+

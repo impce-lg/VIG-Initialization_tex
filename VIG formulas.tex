@@ -1,0 +1,1753 @@
+\documentclass{article}
+\usepackage[UTF8]{ctex}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{bbold}
+\usepackage{amssymb}  % 德文尖角体，李代数符号使用
+
+% 公式按章节编号
+\makeatletter
+\@addtoreset{equation}{section}
+\makeatother
+\renewcommand{\theequation}{\arabic{section}.\arabic{equation}}
+
+% 文档标题
+\title{VIG formulas}
+\author{RongHe Jin}
+\date{May 2020}
+
+\begin{document}
+\maketitle
+
+\section{gtsam-ProjectionFactor}
+gtsam每一个factor都是一个class，包含构造函数（输入状态变量）、error（求残差）等方法。
+
+\subsection{Viusal only (no extrinsic paras)}\label{section:VisualPrj}
+包含两个状态量$\boldsymbol{T}_{wc}$和$\boldsymbol{p}_w$。为了方便，将相机位姿$\boldsymbol{T}_{wc}$简记为$\boldsymbol{T}$。ProjectionFactor的error为像素平面的重投影误差，形式为：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_c & =\boldsymbol{T}^{-1} \boldsymbol{p}_w =\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t}  = 
+		\left[
+		\begin{matrix}
+		X'\\
+		Y'\\                                         
+		Z' 
+		\end{matrix}
+		\right] \\
+		\boldsymbol {e}  & =\frac{1}{Z'}\boldsymbol{K} \boldsymbol{T}^{-1} \boldsymbol{p}_w  -uv                              \\&=
+		\frac{1}{Z'}\boldsymbol{K} 
+		\left[
+		\begin{matrix}
+		X'\\
+		Y'\\                                          
+		Z' 
+		\end{matrix}
+		\right]-uv
+	\end{aligned}
+\end{equation}
+
+分别求$\boldsymbol{e} $对$\boldsymbol{T} $和$\boldsymbol{p}_w $的导数。采用链式法则，将其分解为
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{T}}}   & = \frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}}\cdot \frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}}}   
+		\\
+		\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{p}_w}} & = \frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}}\cdot \frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}} 
+	\end{aligned}
+\end{equation}
+
+首先,
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}} & =
+		\left[
+		\begin{matrix}
+		f_x & 0 \\
+		0 & f_y 
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix}
+		\frac{1}{Z'} & 0            & -\frac{X'}{Z'^2} \\
+		0            & \frac{1}{Z'} & -\frac{Y'}{Z'^2} 
+		\end{matrix}
+		\right] 
+	\end{aligned} 
+\end{equation}
+
+下面分别求$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}}}$和$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}}$
+
+\subsubsection{$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}}}$}
+我们知道李群$\boldsymbol{T}\in\boldsymbol{SE}(3)$没有加法，需要转换到李代数$\mathfrak{se}(3)$才能使用导数的定义求导。这里我们提供两种右扰动方式进行求导，即对旋转和平移分别扰动，和对旋转和平移同时扰动。\\
+(1)对旋转和平移分别扰动
+\begin{itemize}
+	\item $\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{R}}}$\\
+	      首先，
+	      $$
+	      \begin{aligned}
+	      	\boldsymbol{T}'                               & = {\boldsymbol{T}} \cdot \delta\boldsymbol{T}         \\&=
+	      	\left[ 
+	      	\begin{matrix} 
+	      	\boldsymbol{R}                                & \vec{t}                                               \\  
+	      	\boldsymbol{0}^T                              & 1                                                     
+	      	\end{matrix}
+	      	\right]\cdot
+	      	\left[
+	      	\begin{matrix}
+	      	exp(\delta{\vec{r}} \times)                   & \boldsymbol{0}                                        \\
+	      	\boldsymbol{0}^T                              & 1                                                     
+	      	\end{matrix}
+	      	\right]
+	      	\\&=
+	      	\left[
+	      	\begin{matrix}
+	      	\boldsymbol{R}exp(\delta{\vec{r}}\times)      & \vec{t}                                               \\
+	      	\boldsymbol{0}^T                              & 1                                                     
+	      	\end{matrix}
+	      	\right] \\
+	      	\boldsymbol{T}'^{-1}\boldsymbol{p}_w          & =                                                     
+	      	\left[
+	      	\begin{matrix}
+	      	exp(-\delta{\vec{r}}\times)\boldsymbol{R}^{T} & -exp(-\delta{\vec{r}}\times)\boldsymbol{R}^{T}\vec{t} \\
+	      	\boldsymbol{0}^T                              & 1                                                     
+	      	\end{matrix}
+	      	\right]\boldsymbol{p}_w                       \\& =                                                    
+	      	(\boldsymbol{I}-\delta{\vec{r}}\times)\boldsymbol{R}^{T}\boldsymbol{p}_w-(\boldsymbol{I}-\delta{\vec{r}}\times)\boldsymbol{R}^{T}\vec{t}
+	      \end{aligned}
+	      $$
+	      	      	      	      	      
+	      所以 
+	      \begin{equation}
+	      	\begin{aligned}
+	      		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{R}}} & = \lim_{\delta{\vec{r}}  \rightarrow0}\frac{\boldsymbol{T}'^{-1} \cdot \boldsymbol{p}_w -\boldsymbol{T}^{-1}  \cdot \boldsymbol{p}_w}{\delta{\vec{r}}} \\&= 
+	      		\lim_{\delta{\vec{r}}  \rightarrow0} \frac{-\delta\vec{r}\times(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})}{\delta{\vec{r}}} \\&=
+	      		(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})\times\\&=
+	      		\boldsymbol{P}_c\times
+	      	\end{aligned}
+	      \end{equation} 
+	      	      	      	      
+	\item $\frac{\partial{\boldsymbol{P}_c}}{\partial{\vec{t}}}$\\
+	      将$\vec{t} $施加扰动量$\delta{\vec{t}}$
+	      $$
+	      \begin{aligned}
+	      	\boldsymbol{T}'                      & = \boldsymbol{T} \cdot \delta\boldsymbol{T}            \\&=
+	      	\left[
+	      	\begin{matrix}
+	      	\boldsymbol{R}                       & \vec{t}                                                \\  
+	      	\boldsymbol{0}^T                     & 1                                                      
+	      	\end{matrix}
+	      	\right]	
+	      	\left[
+	      	\begin{matrix}
+	      	\boldsymbol{I}                       & \delta \vec{t}                                         \\ 
+	      	\boldsymbol{0}^T                     & 1                                                      
+	      	\end{matrix}
+	      	\right]\\&=
+	      	\left[
+	      	\begin{matrix}
+	      	\boldsymbol{R}                       & \boldsymbol{R}\delta\vec{t} + \vec{t}                  \\ 
+	      	\boldsymbol{0}^T                     & 1                                                      
+	      	\end{matrix}
+	      	\right]\\
+	      	\boldsymbol{T}'^{-1}\boldsymbol{p}_w & =                                                      
+	      	\left[
+	      	\begin{matrix}
+	      	\boldsymbol{R}^T                     & -\boldsymbol{R}^T(\boldsymbol{R}\delta\vec{t}+\vec{t}) \\
+	      	\boldsymbol{0}^T                     & 1                                                      
+	      	\end{matrix}
+	      	\right]\boldsymbol{p}_w \\&=
+	      	\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t}-\delta\vec{t}  
+	      \end{aligned}
+	      $$
+
+可得，
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_c}}{\partial{\vec{t}}} & = \lim_{\delta{\vec{t}}  \rightarrow0}\frac{\boldsymbol{T'} \cdot \boldsymbol{p}_w -\boldsymbol{T}  \cdot \boldsymbol{p}_w}{\delta{\vec{t}}} \\&= 
+		-\boldsymbol{I}	
+	\end{aligned}
+\end{equation}
+\end{itemize}
+
+所以，$\boldsymbol{e}$对$\boldsymbol{T}$的导数为：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{T}}}  = & \frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}}  \frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}}}\\ =& 
+		\left[
+		\begin{matrix}
+		f_x & 0 \\
+		0 & f_y 
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix}
+		\frac{1}{Z'}                                                 & 0                                                                                                                        & -\frac{X'}{Z'^2}    \\
+		0                                                            & \frac{1}{Z'}                                                                                                             & -\frac{Y'}{Z'^2}    
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})\times & -\boldsymbol{I} \\
+		\end{matrix}
+		\right] \\=& 
+		\left[
+		\begin{matrix}
+		\frac{f_x}{Z'}                                               & 0                                                                                                                        & -\frac{f_xX'}{Z'^2} \\
+		0                                                            & \frac{f_y}{Z'}                                                                                                           & -\frac{f_yY'}{Z'^2} 
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		0                        & -Z'                       & Y'                  & 1               & 0               & 0                  \\
+		Z'                       & 0                         & -X'                 & 0               & 1               & 0                  \\
+		-Y'                      & X'                        & 0                   & 0               & 0               & 1                  
+		\end{matrix}
+		\right]\\=& 
+		\left[
+		\begin{matrix}
+		\frac{f_xX'Y'}{Z'^2}     & -f_x-\frac{f_xX'^2}{Z'^2} & \frac{f_xY'}{Z'}    & -\frac{f_x}{Z'} & 0               & \frac{f_xX'}{Z'^2} \\
+		f_y+\frac{f_yY'^2}{Z'^2} & -\frac{f_yX'Y'}{Z'^2}     & -\frac{f_yX'}{Z'^2} & 0               & -\frac{f_y}{Z'} & \frac{f_yY'}{Z'^2} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+(2)对旋转和平移同时扰动
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}'^{-1}\boldsymbol{p}_w = & (\boldsymbol{T}\delta\boldsymbol{T})^{-1}\boldsymbol{p}_w \\ =& 
+		\left(
+		\left[ 
+		\begin{matrix}
+		\boldsymbol{R} & \vec{t}\\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		exp(\delta\vec{r}\times) & \delta\vec{t} \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]
+		\right)^{-1} \boldsymbol{p}_w
+		\\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}exp(\delta\vec{r}\times) & \boldsymbol{R}\delta\vec{t}+\vec{t} \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]^{-1} \boldsymbol{p}_w
+		\\=& 
+		\left[
+		\begin{matrix}
+		exp(-\delta\vec{r}\times)\boldsymbol{R}^T & -exp(-\delta\vec{r}\times)\boldsymbol{R}^T(\boldsymbol{R}\delta\vec{t}+\vec{t}) \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right] \boldsymbol{p}_w \\=& 
+		(\boldsymbol{I}-\delta\vec{r}\times)\boldsymbol{R}^T\boldsymbol{p}_w-(\boldsymbol{I}-\delta\vec{r}\times)\boldsymbol{R}^T(\boldsymbol{R}\delta\vec{t}+\vec{t}) \\=&
+		(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})+[(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})\times]\delta\vec{r}-\delta\vec{t}+\delta\vec{r}\times\delta\vec{t} \\\approx &
+		(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})+[(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})\times]\delta\vec{r}-\delta\vec{t}
+	\end{aligned}
+\end{equation}
+可以得出和(1)同样的结果
+
+\subsubsection{$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}}$}
+由于
+$$
+\begin{aligned}
+	\boldsymbol{P}_c                                                          & = \boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t} \\
+	\Rightarrow \frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}} & = \boldsymbol{R}^T                                         
+\end{aligned}
+$$
+有：
+\begin{equation}
+	\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{p}_w}} = 
+	\left[
+		\begin{matrix}
+			f_x & 0   \\
+			0   & f_y 
+		\end{matrix}
+	\right]
+	\left[ 
+		\begin{matrix}
+			\frac{1}{Z'} & 0            & \frac{X'}{Z'^2} \\
+			0            & \frac{1}{Z'} & \frac{Y'}{Z'^2} 
+		\end{matrix}
+	\right]
+	\boldsymbol{R}^T
+\end{equation}
+
+\subsection{Viusal-Inertial (with extrinsic parameters)}
+注意这里的状态量是$\boldsymbol{T}_{wi}$和$\boldsymbol{p}_w$，在VIO中要考虑IMU-Camera外参$\boldsymbol{T}_{ic}$，重投影误差如下：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_c                         & =(\boldsymbol{T}_{wi}\boldsymbol{T}_{ic})^{-1}\boldsymbol{p}_w                                 \\&=
+		\left(
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{wi}\boldsymbol{R}_{ic}   & \boldsymbol{R}_{wi}\vec{t}_{ic}+\vec{t}_{wi}                                                   \\
+		\boldsymbol{0}^T                         & 1                                                                                              
+		\end{matrix}
+		\right]
+		\right)^{-1}\boldsymbol{p}_w \\&=                              
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T & -\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T(\boldsymbol{R}_{wi}\vec{t}_{ic}+\vec{t}_{wi})        \\
+		\boldsymbol{0}^T                         & 1                                                                                              
+		\end{matrix}
+		\right]\boldsymbol{p}_w \\&=
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\boldsymbol{p}_w  -\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T(\boldsymbol{R}_{wi}\vec{t}_{ic}+\vec{t}_{wi}) \\&=
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\boldsymbol{p}_w  +\vec{t}_{ci}-\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\vec{t}_{wi} \\&=
+		\left[
+		\begin{matrix}
+		X'\\
+		Y'\\                                         
+		Z' 
+		\end{matrix}
+		\right] \\
+		\boldsymbol {e}                          & =\frac{1}{Z'}\boldsymbol{K} (\boldsymbol{T}_{wi}\boldsymbol{T}_{ic})^{-1}\boldsymbol{p}_w  -uv \\&=
+		\frac{1}{Z'}\boldsymbol{K} 
+		\left[
+		\begin{matrix}
+		X'\\
+		Y'\\                                         
+		Z'
+		\end{matrix}
+		\right]-uv
+	\end{aligned}
+	\label{equation:reprj_err}
+\end{equation}
+
+我们按照\ref{section:VisualPrj}中的方式，对IMU的旋转和平移施加扰动
+\subsubsection{$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{wi}}}$}
+$$
+\begin{aligned}
+	\boldsymbol{P}_c' & =(\boldsymbol{T}_{wi}\delta\boldsymbol{T}_{wi}\boldsymbol{T}_{ic})^{-1}\boldsymbol{p}_w \\ & = 
+	\left[ 
+	\begin{matrix} 
+	\boldsymbol{R}_{ci}                                                & \vec{t}_{ci}                                                                   \\ 
+	\boldsymbol{0}^T                                                   & 1                                                                              
+	\end{matrix}
+	\right]
+	\left[
+	\begin{matrix}
+	exp(-\delta{\vec{r}}\times)\boldsymbol{R}^T                        & -exp(-\delta{\vec{r}}\times)\boldsymbol{R}^T(\boldsymbol{R}\delta\vec{t}+\vec{t})\\ 
+	\boldsymbol{0}^T                                                   & 1                                                                              
+	\end{matrix}
+	\right] \boldsymbol{p}_w
+	\\&=
+	\left[
+	\begin{matrix}
+	\boldsymbol{R}_{ci}exp(-\delta{\vec{r}} \times) \boldsymbol{R}^T &                                                                                
+	-\boldsymbol{R}_{ci}exp(-\delta{\vec{r}} \times) \boldsymbol{R}^T(\boldsymbol{R}\delta\vec{t}+\vec{t})+\vec{t}_{ci}\\
+	\boldsymbol{0}^T                                                   & 1                                                                              
+	\end{matrix}
+	\right]\boldsymbol{p}_w \\& = 
+	\boldsymbol{R}_{ci}\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}_{ci}\boldsymbol{R}^T\vec{t}+\vec{t}_{ci}+\boldsymbol{R}_{ci}[(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})\times]\delta\vec{r}-\boldsymbol{R}_{ci}\delta\vec{t}
+\end{aligned}
+所以，
+$$
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial\boldsymbol{P}_c}{\partial\delta\boldsymbol{\xi}_1}                     & =                    
+		\lim_{\delta\boldsymbol{\xi}\rightarrow0} \frac{\boldsymbol{P}'_c-\boldsymbol{P}_c}{\delta\boldsymbol{\xi}}\\&=
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ci}[(\boldsymbol{R}^T\boldsymbol{p}_w-\boldsymbol{R}^T\vec{t})\times] & -\boldsymbol{R}_{ci} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation} 
+
+\subsubsection{$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}}$}
+由(\ref{equation:reprj_err})
+$$
+\begin{aligned}
+	\boldsymbol{P}_c                                                          & =                                        
+	\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\boldsymbol{p}_w  -\vec{t}_{ci}-\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\vec{t}_{wi} 
+	\\
+	\Rightarrow \frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}} & = \boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T
+\end{aligned}
+$$
+
+有：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{p}_w}} & = \frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}}  \frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{p}_w}} 
+		\\& = 
+		\left[ 
+		\begin{matrix}
+		\frac{f_x}{Z'} & 0              & \frac{f_xX'}{Z'^2} \\
+		0              & \frac{f_y}{Z'} & \frac{f_yY'}{Z'^2} 
+		\end{matrix}
+		\right]
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{iw} 
+	\end{aligned}
+\end{equation}
+
+\subsubsection{gtsam源码中的求导}
+这里再次写出重投影误差方程：
+$$
+\begin{aligned}
+	\boldsymbol{P}_c & =(\boldsymbol{T}_{wi} \boldsymbol{T}_{ic})^{-1} \boldsymbol{p}_w  =                              
+	\left[
+	\begin{matrix}
+	X'\\
+	Y'\\
+	Z' 
+	\end{matrix}
+	\right] \\
+	\boldsymbol {e}  & =\frac{1}{Z'}\boldsymbol{K} (\boldsymbol{T}_{wi} \boldsymbol{T}_{ic})^{-1} \boldsymbol{p}_w  -uv 
+	\\&=
+	\frac{1}{Z'}\boldsymbol{K}
+	\left[
+	\begin{matrix}
+	X'\\
+	Y'\\
+	Z' 
+	\end{matrix}
+	\right]-uv
+\end{aligned}
+$$
+
+$ \frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}}$都是完全相同的，即
+$$
+\begin{aligned}
+	\frac{\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_c}}&=
+	\left[ 
+	\begin{matrix}
+	\frac{f_x}{Z'} & 0              & \frac{f_xX'}{Z'^2} \\
+	0              & \frac{f_y}{Z'} & \frac{f_yY'}{Z'^2} 
+	\end{matrix}
+	\right]
+\end{aligned}
+$$
+
+只考虑$\boldsymbol{P}_c$对$\boldsymbol{T}_{wi}$和$\vec{p}_w$的导数，其中对$\vec{p}_w$的导数和我们推导的一致。只讨论对$\boldsymbol{T}_{wi}$的求导，直接给出gtsam中公式(注意上下标中的位姿含义)
+\begin{equation}
+	\begin{aligned}
+		\\
+		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{wi}}} & =   \boldsymbol{H}_1\cdot \boldsymbol{H}_0 
+		\label{Gtsam_dPc_dTiw}
+	\end{aligned}
+\end{equation}
+
+其中，
+$$
+\begin{aligned}
+	\boldsymbol{H}_1                         & =                   
+	\left[                        
+	\begin{matrix}
+	-(\boldsymbol{P}_c\times)                & \boldsymbol{I}      \\
+	\boldsymbol{0}^T                         & \boldsymbol{0}^T    
+	\end{matrix}
+	\right]\\
+	\boldsymbol{H}_0                         & =                   
+	Adjoint(\boldsymbol{T}_{ci}) \\& =                   
+	\left[                        
+	\begin{matrix}
+	\boldsymbol{R}_{ci}                      & \boldsymbol{0}      \\
+	(\vec{t}_{ci}\times) \boldsymbol{R}_{ci} & \boldsymbol{R}_{ci} 
+	\end{matrix}
+	\right]
+\end{aligned}
+$$
+
+这里$\boldsymbol{H}_1$和Visual-only中相同，只是多了一项$\boldsymbol{H}_0$。下面比较我们的推导和gtsam的推导，将$\boldsymbol{P}_c$代入并展开公式(\ref{Gtsam_dPc_dTiw})：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{iw}}}                                    & =                   
+		\left[          
+		\begin{matrix}
+		-(\boldsymbol{P}_c\times)                                                                           & \boldsymbol{I}      \\
+		\boldsymbol{0}^T                                                                                    & \boldsymbol{0}^T    
+		\end{matrix}
+		\right]
+		\left[                        
+		\begin{matrix}
+		\boldsymbol{R}_{ci}                                                                                 & \boldsymbol{0}      \\
+		(\vec{t}_{ci}\times) \boldsymbol{R}_{ci}                                                            & \boldsymbol{R}_{ci} 
+		\end{matrix}
+		\right]\\&=
+		\left[                        
+		\begin{matrix}
+		-(\boldsymbol{P}_c\times)\boldsymbol{R}_{ci}+(\vec{t}_{ci}\times) \boldsymbol{R}_{ci}               & \boldsymbol{R}_{ci} \\
+		\boldsymbol{0}^T                                                                                    & \boldsymbol{0}^T    
+		\end{matrix}
+		\right]\\&=
+		\left[
+		\begin{matrix}
+		-(\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}\boldsymbol{p}_w+ \vec{t}_{ci}))\times \boldsymbol{R}_{ci} & \boldsymbol{R}_{ci} \\
+		\boldsymbol{0}^T                                                                                    & \boldsymbol{0}^T    
+		\end{matrix}
+		\right]
+		\label{Gtsam_dPc_dTiw_2}
+	\end{aligned}
+\end{equation}
+
+我们的推导为：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{iw}}}               & =                   
+		\left[
+		\begin{matrix}
+		-\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}  \boldsymbol{p}_w+\vec{t}_{iw})\times & \boldsymbol{R}_{ci} \\ 
+		\boldsymbol{0}^T                                                               & \boldsymbol{0}^T    
+		\end{matrix}
+		\right] 
+		\label{Gtsam_dPc_dTiw_Jin}
+	\end{aligned}
+\end{equation}
+
+比较(\ref{Gtsam_dPc_dTiw_2})和(\ref{Gtsam_dPc_dTiw_Jin})，我们需要验证：
+\begin{equation} 
+	-(\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}\boldsymbol{p}_w+ \vec{t}_{ci}))\times \boldsymbol{R}_{ci}=
+	-\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}  \boldsymbol{p}_w+\vec{t}_{iw})\times 
+	\label{equation:crossmulti4orthmat}
+\end{equation} 
+当$\boldsymbol{R}$为正交矩阵即$\boldsymbol{R}^{-1}=\boldsymbol{R}^T$时，对任意向量$\vec{a}$，有$\boldsymbol{R}(\vec{a}\times)=((\boldsymbol{R}\vec{a})\times)\boldsymbol{R}$，故(\ref{equation:crossmulti4orthmat})式成立
+			
+\section{gtsam-InvDepthVariantFactor3 for Viusal \\only}
+下表是InvDepthVariantFactor3a和InvDepthVariantFactor3b的状态量比较，注意两者输入的landmark都是在相机系下的InvDepth形式。
+\begin{table}[H]
+	\caption{a，b两个版本的InvDepthVariantFactor3比较}
+	\centering
+	%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
+	\begin{tabular}{ccc}
+		\toprule
+		\textbf{} & \textbf{初始化变量}        \\
+		\midrule
+		a         & Pose，Pose\_Landmark           \\
+		b         & Pose1，Pose2，Pose1\_Landmark \\
+		\bottomrule
+	\end{tabular}
+\end{table}
+
+\subsection{InvDepthVariantFactor3a}
+InvDepthFactorVariant3a的输入状态有2个，分别为特征点被初次观测的相机Pose和在该Pose下的InvDepth。error为像素平面的重投影误差：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_1 & = \boldsymbol{T}_1^{-1}\boldsymbol{T}_1\boldsymbol{P}_1 \\&=
+		\boldsymbol{P}_1 \\
+		\boldsymbol{e}   & = \frac{1}{Z_1}\boldsymbol{K} \boldsymbol{P}_1-uv_1     \\&=
+		\frac{1}{Z_1}\boldsymbol{K}                            
+		\left[
+		\begin{matrix}
+		X_1 \\
+		Y_1 \\
+		Z_1
+		\end{matrix}
+		\right]-uv_1
+	\end{aligned}
+\end{equation}
+
+其中，$P_1$是特征点在$Pose_1$（即${T_{wc}}_{1}$，从相机坐标系到世界坐标系）下的坐标，也是特征点的参数化形式：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_1=       
+		\left[                  
+		\begin{matrix}          
+		X_1                     \\ 
+		Y_1                     \\
+		Z_1                     
+		\end{matrix}            
+		\right]=\frac{1}{\rho}  
+		\left[                  
+		\begin{matrix}          
+		cos\phi \cdot sin\theta \\
+		sin\phi                 \\
+		cos\phi \cdot cos\theta 
+		\end{matrix}            
+		\right]                 
+	\end{aligned}
+\end{equation}
+
+$\boldsymbol{e}$与$\boldsymbol{T}_1$无关，所以
+$$
+\begin{aligned}
+	\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{R}_1}}=\boldsymbol{0} \\
+	\frac {\partial{\boldsymbol{e}}}{\partial{\vec{t}_1}}=\boldsymbol{0}
+\end{aligned}
+$$
+
+设$\vec{p}_1=\left[\begin{matrix} \theta&\phi&\rho  \end{matrix}\right]$，用链式法则求$\frac{\partial{\boldsymbol{e}}}{\partial{\vec{p}_1}}$
+\begin{equation}
+	\begin{aligned}
+		\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_1}}&=\boldsymbol K 
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_1}                   & 0                               & -\frac{X_1}{Z_1^2}                \\
+		0                               & \frac{1}{Z_1}                   & -\frac{Y_1}{Z_1^2}                
+		\end{matrix}
+		\right] \\ 
+		\frac{\partial{\boldsymbol{P}_1}}{\partial{\vec{p}_1}}&=
+		\left[
+		\begin{matrix}
+		\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+		0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+		-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+可得
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\vec{p}_1}}=\boldsymbol K 
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_1}                   & 0                               & -\frac{X_1}{Z_1^2}                \\
+		0                               & \frac{1}{Z_1}                   & -\frac{Y_1}{Z_1^2}                
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+		0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+		-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+		\right] 
+	\end{aligned}
+\end{equation}
+
+\subsection{InvDepthVariantFactor3b}
+InvDepthFactorVariant3b的输入状态有3个，分别为首次观测帧的Pose1、当前观测帧Pose2和点在Pose1下的InvDepth， 的error为像素平面的重投影误差，形式为：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2 & =\boldsymbol{T}_2^{-1}\boldsymbol{T}_1\boldsymbol{P}_1                        \\&=
+		\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)] \\
+		\boldsymbol {e}  & =\frac{1}{Z_2}\boldsymbol K\boldsymbol{P}_2 -uv_2 =\frac{1}{Z_2}\boldsymbol K 
+		\left[
+		\begin{matrix}
+		X_2 \\
+		Y_2 \\
+		Z_2 
+		\end{matrix}
+		\right]-uv_2
+	\end{aligned}
+\end{equation}
+
+$P_1$是特征点在$Pose_1$（即$T_1$）下的坐标，参数化形式：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_1=       
+		\left[                  
+		\begin{matrix}          
+		X_1                     \\
+		Y_1                     \\
+		Z_1                     
+		\end{matrix}            
+		\right]                 
+		=\frac{1}{\rho}         
+		\left[                  
+		\begin{matrix}          
+		cos\phi \cdot sin\theta \\
+		sin\phi                 \\
+		cos\phi \cdot cos\theta 
+		\end{matrix}            
+		\right]                 
+	\end{aligned}
+\end{equation}
+
+推导jacobian矩阵采用链式法则，需要注意的是由于李群$\boldsymbol{T}\in \boldsymbol{SE}(3)$没有加法，需要将其映射到李代数$\mathfrak{se}(3)$上，才能对自变量施加微小扰动，按照导数的定义进行。？？？这一点不同于将旋转和平移分别处理的方式。\\
+（1）先求$\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}$
+\begin{equation}
+	\begin{aligned}
+		\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}&=\boldsymbol K 
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_2} & 0             & -\frac{X_2}{Z_2^2} \\
+		0             & \frac{1}{Z_2} & -\frac{Y_2}{Z_2^2} 
+		\end{matrix}
+		\right] 
+	\end{aligned}
+\end{equation} \\
+（2）接下来求$\boldsymbol{P}_2$对3个变量（位姿包含2个，实际上是5个）的jacobian，需要分别考察对$\boldsymbol{R}$和$\boldsymbol t$的导数
+
+1）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{R}_1}}$，这里$\boldsymbol{T}_1$，$\boldsymbol{R}_1$是李群，需要通过对数映射转换到李代数才能求导
+将$\boldsymbol{R}_1$施加扰动量$\delta \vec{r}_1 \times$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}_1'                           & =\boldsymbol{T}_1 \cdot \delta \boldsymbol{T}_1 \\&=
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_1                            & \vec{t}_1                                       \\  
+		0                                           & 1                                               
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix} 
+		exp(\delta \vec{r}_1\times)                 & \boldsymbol{0}^T                                \\
+		\boldsymbol{0}^T                            & 1                                               
+		\end{matrix}
+		\right]\\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1exp(\delta \vec{r}_1\times) & \vec{t}_1                                       \\ 
+		\boldsymbol{0}^T                            & 1                                               
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+代入$\boldsymbol{P}_2$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\boldsymbol{T}_1')                              & =\boldsymbol{T}_2^{-1}\boldsymbol{T}_1'\boldsymbol{P}_1 \\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_2^{T}                                             & -\boldsymbol{R}_2^{T}\vec{t}_2                          \\
+		\boldsymbol{0}                                                   & 1                                                       
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_1exp(\delta \vec{r}_1\times)                      & \vec{t}_1                                               \\ 
+		\boldsymbol{0}^T                                                 & 1                                                       
+		\end{matrix}
+		\right]   \boldsymbol{P}_1\\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_2^{T} \boldsymbol{R}_1exp(\delta \vec{r}_1\times) & \boldsymbol{R}_2^{T}(\vec{t}_1-\vec{t}_2)               \\ 
+		\boldsymbol{0}^T                                                 & 1                                                       
+		\end{matrix}
+		\right]  \boldsymbol{P}_1 \\&= 
+		\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1exp(\delta \vec{r}_1\times)\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]\\&=
+		-\boldsymbol{R}_2^{T} \boldsymbol{R}_1(\boldsymbol{P}_1\times)\delta \vec{r}_1+\boldsymbol{R}_2^{T}(\vec{t}_1-\vec{t}_2)
+	\end{aligned}
+\end{equation}
+
+根据导数定义求导
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{R}_1}} & = 
+		\lim_{\delta \vec{r}\rightarrow0}
+		\frac{\boldsymbol{P}_2(\boldsymbol{R}_1\delta r_1)- \boldsymbol{P}_2(\boldsymbol{R}_1)}
+		{\delta \vec{r}_1}
+		\\&=
+		\lim_{\delta \vec{r}\rightarrow0}
+		\frac{\{\boldsymbol{R}_2^{T} [\boldsymbol{R}_1exp(\delta \vec{r}_1\times)\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]\}-
+		\{\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]\}}
+		{\delta \vec{r}_1}\\&=
+		\lim_{\delta \vec{r}\rightarrow0}
+		\frac{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1( \boldsymbol{I}+\delta \vec{r}_1\times)\boldsymbol{P}_1 -\boldsymbol{R}_1\boldsymbol{P}_1]}
+		{\delta \vec{r} _1}\\&=
+		\lim_{\delta \vec{r}_1\rightarrow0}
+		\frac{\boldsymbol{R}_2^{T} \boldsymbol{R}_1\delta \vec{r}_1\times\boldsymbol{P}_1}
+		{\delta \vec{r}_1}\\&=
+		\lim_{\delta \vec{r}_1\rightarrow0}
+		\frac{\boldsymbol{R}_2^{T} \boldsymbol{R}_1(-\boldsymbol{P}_1\times)\delta \vec{r}_1}
+		{\delta \vec{r}_1}\\&=
+		-\boldsymbol{R}_2^{T} \boldsymbol{R}_1(\boldsymbol{P}_1\times)
+	\end{aligned}
+\end{equation}
+
+2）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_1}}$，同样转换到李代数$\boldsymbol \xi_1$
+
+将$\vec{t}_1$施加扰动量$\delta \vec{t}_1$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}_1(\vec{t}_1+\delta \vec{t}_1) & =\boldsymbol{T}_1 \cdot \delta \boldsymbol{T}_1 \\&=
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_1                             & \vec{t}_1                                       \\
+		\boldsymbol{0}^T                             & 1                                               
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix}
+		\boldsymbol{I}                               & \delta \vec{t}_1                                \\ 
+		\boldsymbol{0}^T                             & 1                                               
+		\end{matrix}
+		\right]\\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1                             & \boldsymbol{R}_1\delta \vec{t}_1+\vec{t}_1      \\ 
+		\boldsymbol{0}^T                             & 1                                               
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+代入$\boldsymbol{P}_2$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\vec{t}_1+\delta \vec{t}_1) & =                                                                           
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_2^{T}                         & -\boldsymbol{R}_2^{T}\vec{t}_2                                              \\
+		0                                            & 1                                                                           
+		\end{matrix} 
+		\right]
+		\left[ 
+		\begin{matrix}
+		\boldsymbol{R}_1                             & \boldsymbol{R}_1\delta \vec{t}_1+\vec{t}_1                                  \\
+		\boldsymbol{0}^T                             & 1                                                                           
+		\end{matrix}
+		\right]   \boldsymbol{P}_1\\&=
+		\left[ 
+		\begin{matrix}
+		\boldsymbol{R}_2^{T} \boldsymbol{R}_1        & \boldsymbol{R}_2^{T}[(\boldsymbol{R}_1\delta\vec{t}_1+\vec{t}_1)-\vec{t}_2] \\ 
+		\boldsymbol{0}^T                             & 1                                                                           
+		\end{matrix}
+		\right] 
+		\boldsymbol{P}_1 \\&= 
+		\boldsymbol{R}_2^{T} \boldsymbol{R}_1\boldsymbol{P}_1 +\boldsymbol{R}_2^{T}[(\boldsymbol{R}_1\delta\vec{t}_1+\vec{t}_1)-\vec{t}_2]
+	\end{aligned}
+\end{equation}
+
+求导
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_1}} & = 
+		\lim_{\delta \vec{t}_1\rightarrow0}
+		\frac{\boldsymbol{P}_2(\vec{t}_1+\delta \vec{t}_1)-\boldsymbol{P}_2(\vec{t}_1)}
+		{\delta \vec{t}_1}\\&=
+		\lim_{\delta \vec{t}_1\rightarrow0}
+		\frac{\boldsymbol{R}_2^{T}\boldsymbol{R}_1\delta\vec{t}_1}
+		{\delta \vec{t}_1}\\&=
+		\boldsymbol{R}_2^{T}\boldsymbol{R}_1
+	\end{aligned}
+\end{equation}
+
+3）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{R}_2}}$，与$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{R}_1}}$类似
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\boldsymbol{R}_2\delta \vec{r}_2)                & =\boldsymbol{T}_2'^{-1}\boldsymbol{T}_1\boldsymbol{P}_1               \\&=
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2exp(\delta \vec{r}_2\times)                       & \vec{t}_2                                                             \\
+		0                                                                 & 1                                                                     
+		\end{matrix} 
+		\right]^{-1}
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_1                                                  & \vec{t}_1                                                             \\ 
+		\boldsymbol{0}^T                                                  & 1                                                                     
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\&=
+		\left[ 
+		\begin{matrix}
+		exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}                  & -exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}\vec{t}_2            \\
+		0                                                                 & 1                                                                     
+		\end{matrix} 
+		\right]
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1                                                  & \vec{t}_1                                                             \\ 
+		\boldsymbol{0}^T                                                  & 1                                                                     
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\&=
+		\left[ 
+		\begin{matrix} 
+		exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T} \boldsymbol{R}_1 & exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}(\vec{t}_1-\vec{t}_2) \\ 
+		\boldsymbol{0}^T                                                  & 1                                                                     
+		\end{matrix}
+		\right]  
+		\boldsymbol{P}_1 \\&=
+		exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]\\&\approx
+		(\boldsymbol{I}-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]
+	\end{aligned}
+\end{equation}
+
+求导
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{R}_2}} & = 
+		\lim_{\delta \vec{r}\rightarrow0}\frac{\boldsymbol{P}_2(\boldsymbol{R}_2\delta \vec{r}_2)\}-  \boldsymbol{P}_2(\boldsymbol{R}_2)}                                 
+		{\delta \vec{r}_2}\\&=
+		\lim_{\delta \vec{r}\rightarrow0}\frac{\{(\boldsymbol{I}-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]\}- 
+		\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]}{\delta \vec{r} ——2}\\&=
+		\lim_{\delta \vec{r}\rightarrow0}\frac{（(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]}                 
+		{\delta \vec{r} _2}\\&=
+		\{\boldsymbol{R}_2^{T}[ \boldsymbol{R}_1\boldsymbol{P}_1 +(\vec{t}_1-\vec{t}_2)]\}\times                                                                             
+	\end{aligned}
+\end{equation}
+
+4）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_2}}$，与$\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_1}}$类似
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}_2(\vec{t}_2+\delta \vec{t}_2) & =                                          
+		\boldsymbol{T}_2 \cdot \delta \boldsymbol{T}_2\\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_2                             & \boldsymbol{R}_2\delta \vec{t}_2+\vec{t}_2 \\
+		\boldsymbol{0}^T                             & 1                                          
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+代入$\boldsymbol{P}_2$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\vec{t}_2+\delta \vec{t}_2) & =                                                                                              
+		\left[ 
+		\begin{matrix}
+		\boldsymbol{R}_2^{T}                         & -\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta \vec{t}_2+\vec{t}_2)                              \\
+		0                                            & 1                                                                                              
+		\end{matrix} 
+		\right]
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1                             & \vec{t}_1                                                                                      \\ 
+		\boldsymbol{0}^T                             & 1                                                                                              
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\&=
+		\left[ 
+		\begin{matrix}
+		\boldsymbol{R}_2^{T} \boldsymbol{R}_1        & \boldsymbol{R}_2^{T}\vec{t}_1-\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta \vec{t}_2+\vec{t}_2) \\ 
+		\boldsymbol{0}^T                             & 1                                                                                              
+		\end{matrix}
+		\right]  \boldsymbol{P}_1 \\&= 
+		\boldsymbol{R}_2^{T} \boldsymbol{R}_1\boldsymbol{P}_1 +\boldsymbol{R}_2^{T}\vec{t}_1-\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta \vec{t}_2+\vec{t}_2)
+	\end{aligned}
+\end{equation}
+
+求导
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_2}} & = 
+		\lim_{\delta \vec{t}_2\rightarrow0}
+		\frac{\boldsymbol{P}_2(\vec{t}_2+\delta \vec{t}_2)-\boldsymbol{P}_2(\vec{t}_2)}
+		{\delta \vec{t}_2}\\&=
+		\lim_{\delta \vec{t}_2\rightarrow0}
+		\frac{-\boldsymbol{R}_2^{T}\boldsymbol{R}_2\delta\vec{t}_2}
+		{\delta \vec{t}_2}\\&=
+		-\boldsymbol{I}
+	\end{aligned}
+\end{equation}
+
+5）、设$\vec{p}_1=
+\left[
+	\begin{matrix} 
+		\theta & \phi & \rho 
+	\end{matrix}
+\right]$，则
+
+\begin{equation}
+	\boldsymbol{P}_1=
+	\left[\begin{matrix}X_1  \\ 
+		Y_1 \\
+		Z_1
+	\end{matrix}\right]
+	=\frac{1}{\rho}  
+	\left[
+		\begin{matrix}
+			cos\phi \cdot sin\theta \\
+			sin\phi                 \\
+			cos\phi \cdot cos\theta 
+		\end{matrix}
+	\right]
+\end{equation}
+
+用链式法则求$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{p}_1}}$，首先
+\begin{equation}
+	\begin {aligned}
+	\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{P}_1}}&=\boldsymbol{R}_2^{T}\boldsymbol{R}_1
+	\\
+	\frac{\partial{\boldsymbol{P}_1}}{\partial{\vec{p}_1}}&=
+	\left[
+		\begin{matrix}
+			\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+			0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+			-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+	\right]
+	\end{aligned}
+\end{equation}
+
+
+可得
+\begin{equation}
+	\begin{aligned}
+		&= 
+	\end{aligned}
+\end{equation} 
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\vec{p}_1}} =&\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}\frac{\partial{\boldsymbol{P}} _2}{\partial{\boldsymbol{P}_1}} \frac{\partial{\boldsymbol{P}_1}} {\partial{\vec{p}_1}} \\
+		=& \boldsymbol{K}
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_2} & 0             & -\frac{X_2}{Z_2^2} \\
+		0             & \frac{1}{Z_2} & -\frac{Y_2}{Z_2^2} 
+		\end{matrix}
+		\right]\cdot\\&
+		\boldsymbol{R}_2^{T}\boldsymbol{R}_1\cdot 
+		\left[
+		\begin{matrix}
+		\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+		0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+		-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+			
+\subsection{gtsam源码中的求导}
+几个逆深度因子都使用自动求导：
+$$
+f_1(x)=\lim_ {\delta{x} \rightarrow0}\frac{[f(x+\delta{x} )-f(x)]-[f(x-\delta{x} )-f(x)]}{2\delta{x}}
+$$
+
+已知$f(x)$，$\delta{x} $取为$10^{-5}$，计算一次
+			
+\section{VIO-InvDepthVariantFactor3 (with extrinsic paras)-By Jin}
+
+\subsection{InvDepthVariantFactor3a}
+InvDepthFactorVariant3a的输入状态有2个，分别为首次观测帧对应IMU的Pose\_i，和点在Pose\_c下的InvDepth。
+$$
+\begin{aligned}
+	\boldsymbol{P}_1  =& \boldsymbol{T}_{ic}^{-1}\boldsymbol{T}_{wi_1}^{-1}\boldsymbol{T}_{wi_1}\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+	\boldsymbol{P}_1 \\
+	\boldsymbol{e}    =& \frac{1}{Z_1}\boldsymbol{K} \boldsymbol{P}_1-uv_1     
+\end{aligned}
+$$
+
+与Visual-only中的3a类似，这里error相机Pose无关，故两者的Jacobian矩阵也相同：
+\begin{equation}
+	\begin{aligned}
+		\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{R}_1}}  =&\boldsymbol{0} \\
+		\frac {\partial{\boldsymbol{e}}}{\partial{\vec{t}_1}}         =&\boldsymbol{0} \\  
+		\frac{\partial{\boldsymbol{e}}}{\partial{\vec{p}_1}}=&\boldsymbol K 
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_1}                   & 0                               & -\frac{X_1}{Z_1^2}                \\
+		0                               & \frac{1}{Z_1}                   & -\frac{Y_1}{Z_1^2}                
+		\end{matrix}
+		\right] \cdot \\&
+		\left[
+		\begin{matrix}
+		\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+		0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+		-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+		\right] 
+	\end{aligned}
+\end{equation}
+
+\subsection{InvDepthVariantFactor3b}
+InvDepthFactorVariant3b的输入状态有3个，分别为首次观测帧对应IMU的Pose\_i1、当前观测帧对应IMU的Pose\_i2和点在Pose\_c1下的InvDepth。考虑到IMU-Camera外参$\boldsymbol{T}_{ic}$，error为像素平面的重投影误差：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2  = & \boldsymbol{T}_{ic}^{-1}\boldsymbol{T}_{wi_2}^{-1}\boldsymbol{T}_{wi_1}\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T & -\boldsymbol{R}_{ic}^T\vec{t}_{ic} \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2^T & -\boldsymbol{R}_2^T\vec{t}_2 \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right] \\&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_1 & \vec{t}_1 \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic} & \vec{t}_{ic} \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]\boldsymbol{P}_1
+		\\=&
+		\boldsymbol{R}_{ic}^T\left\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic} )+(\vec{t}_1-\vec{t}_2)]-\vec{t}_{ic} \right\}\\
+		\boldsymbol {e}       =&\frac{1}{Z_2}\boldsymbol K\boldsymbol{P}_2 -uv_2 =\frac{1}{Z_2}\boldsymbol K                               
+		\left[
+		\begin{matrix}
+		X_2 \\
+		Y_2 \\
+		Z_2 
+		\end{matrix}
+		\right]-uv_2 \\
+		\boldsymbol{P}_1      =&
+		\left[                  
+		\begin{matrix}          
+		X_1                     \\
+		Y_1                     \\
+		Z_1                     
+		\end{matrix}            
+		\right]                 
+		=\frac{1}{\rho}         
+		\left[                  
+		\begin{matrix}          
+		cos\phi \cdot sin\theta \\
+		sin\phi                 \\
+		cos\phi \cdot cos\theta 
+		\end{matrix}            
+		\right]                 
+	\end{aligned}
+\end{equation}
+
+首先求$\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}$
+\begin{equation}
+	\begin{aligned}
+		\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}&=\boldsymbol K 
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_2} & 0             & -\frac{X_2}{Z_2^2} \\
+		0             & \frac{1}{Z_2} & -\frac{Y_2}{Z_2^2} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation} 
+
+下面我们将$\boldsymbol{T}$转换到李代数$\mathfrak{se}(3)$上使用加法，同时对$\boldsymbol{R}$和$\vec{t}$施加微小扰动，按照导数的定义，用链式法则对$\boldsymbol{T}_1,\boldsymbol{T}_2$求导。对$\vec{p}_1$的求导根据导数的定义可以推出。\\
+（2）接下来求$\boldsymbol{P}_2$对3个变量（位姿包含2个，实际上是5个）的jacobian。 \\
+1）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{T}_1}}$， 先将$\boldsymbol{T}_1$映射到李代数$\boldsymbol{\xi}_1$，施加扰动量$\delta \vec{r}_1$和$\delta\vec{t}_1$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{\xi}_1'                         & =\boldsymbol{\xi}_1 \cdot \delta \boldsymbol{\xi}_1 \\&=
+		\left[
+		\begin{matrix}  
+		\boldsymbol{R}_1                            & \vec{t}_1                                           \\  
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix} 
+		exp(\delta \vec{r}_1\times)                 & \delta\vec{t}_1                                     \\
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]\\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1exp(\delta \vec{r}_1\times) & \boldsymbol{R}_1\delta \vec{t}_1+\vec{t}_1          \\ 
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+代入$\boldsymbol{P}_2$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\boldsymbol{\xi}_1')          = & \boldsymbol{T}_{ic}^{-1}\boldsymbol{T}_{wi_2}^{-1}\boldsymbol{\xi}_{wi_1}'\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T                       & -\boldsymbol{R}_{ic}^T\vec{t}_{ic}                                                                           \\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2^T                          & -\boldsymbol{R}_2^T\vec{t}_2                                                                                 \\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right] \\ &
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_1exp(\delta \vec{r}_1\times) & \boldsymbol{R}_1\delta \vec{t}_1+\vec{t}_1                                                                   \\ 
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}                         & \vec{t}_{ic}                                                                                                 \\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]\boldsymbol{P}_1 \\= &
+		\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1(\boldsymbol{I}+\delta\vec{r}_1\times)\boldsymbol{R}_{ic}\boldsymbol{P}_1+ \\& 
+		\boldsymbol{R}_{ic}\boldsymbol{R}_2^T[\boldsymbol{R}_1(\boldsymbol{I}+\delta\vec{r}_1\times)\vec{t}_{ic}+\boldsymbol{R}_1\delta\vec{t}_1+\vec{t}_1]-\\ &
+		\boldsymbol{R}_{ic}^T(\boldsymbol{R}_2^T\vec{t}_2+\vec{t}_{ic})
+	\end{aligned}
+\end{equation}
+
+求导
+$$
+\begin{aligned}
+	\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{\xi}_1}} & = 
+	\lim_{\delta\boldsymbol{\xi}_1\rightarrow0}
+	\frac{\boldsymbol{P}_2(\boldsymbol{\xi}_1')- \boldsymbol{P}_2(\boldsymbol{\xi}_1)}
+	{\delta\boldsymbol{\xi}_1}
+	\\&=
+	\lim_{\delta\boldsymbol{\xi}_1\rightarrow0}
+	\frac{-\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1[(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})\times]\delta\vec{r}_1+
+	\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1\delta\vec{t}_1}
+	{\delta\boldsymbol{\xi}_1}
+\end{aligned}
+$$
+
+从而可得：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{r}_1}}= & -\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1[(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})\times] \\
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_1}}= & \boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1                                                            
+	\end{aligned}
+\end{equation}
+
+2）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{T}_2}}$，与$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{T}_1}}$类似
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{\xi}_2'=                        & \boldsymbol{\xi}_2 \cdot \delta \boldsymbol{\xi}_2 = 
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_2exp(\delta \vec{r}_2\times) & \boldsymbol{R}_2\delta \vec{t}_2+\vec{t}_2           \\ 
+		\boldsymbol{0}^T                            & 1                                                    
+		\end{matrix}
+		\right] \\
+	\end{aligned}
+\end{equation}
+所以，
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\boldsymbol{\xi}_2')     = & \boldsymbol{T}_{ic}^{-1}\boldsymbol{\xi}_{wi_2}'^{-1}\boldsymbol{T}_{wi_1}\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T                       & -\boldsymbol{R}_{ic}^T\vec{t}_{ic}\\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2exp(\delta \vec{r}_2\times)& \boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2\\
+		0&1 
+		\end{matrix} 
+		\right]^{-1} \\&
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_1& \vec{t}_1\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]   
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_{ic}& \vec{t}_{ic}\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T& -\boldsymbol{R}_{ic}^T\vec{t}_{ic}\\
+		\boldsymbol{0}^T& 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix}
+		exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}& -exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)\\
+		0&1 
+		\end{matrix} 
+		\right] \\&
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1\boldsymbol{R}_{ic}& \boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\=&
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_{ic}^Texp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T} & -\boldsymbol{R}_{ic}^{T}exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)-\boldsymbol{R}_{ic}^T\vec{t}_{ic}\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]  \\ &
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1\boldsymbol{R}_{ic} & \boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]
+		\boldsymbol{P}_1 \\=& 
+		\boldsymbol{R}_{ic}^{T}(\boldsymbol{I}-\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}\boldsymbol{P}_1+\boldsymbol{R}_{ic}^{T}(\boldsymbol{I}-\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)-\\ &
+		\boldsymbol{R}_{ic}^{T}(\boldsymbol{I}-\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)-\boldsymbol{R}_{ic}^{T}\vec{t}_{ic}
+		\\=&
+		[\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}-\boldsymbol{R}_{ic}^{T}(\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}]\boldsymbol{P}_1+ \\ &
+		[\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)-\boldsymbol{R}_{ic}^{T}(\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)] - \\ &
+		[\boldsymbol{R}_{ic}^{T}\delta\vec{t}_2+\boldsymbol{R}_{ic}\boldsymbol{R}_2^T\vec{t}_2-\boldsymbol{R}_{ic}^T(\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)]-\\&
+		\boldsymbol{R}_{ic}\vec{t}_{ic} \\ \approx&
+		[\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}\boldsymbol{P}_1+\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)-\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2\vec{t}_2-\boldsymbol{R}_{ic}\vec{t}_{ic}]+ \\&
+		\boldsymbol{R}_{ic}^{T}\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})+(\vec{t}_1-\vec{t}_2)]\}\times\delta\vec{r}_2- \\&
+		\boldsymbol{R}_{ic}^{T}\delta\vec{t}_2
+	\end{aligned}
+\end{equation}
+
+求导
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{\xi}_2}} & = 
+		\lim_{\delta\boldsymbol{\xi}_2\rightarrow0}\frac{\boldsymbol{P}_2(\boldsymbol{\xi}'_2)\}-  \boldsymbol{P}_2(\boldsymbol{\xi}_2)}{\delta\boldsymbol{\xi}_2}\\&=
+		\lim_{\delta\boldsymbol{\xi}_2\rightarrow0}\frac{\boldsymbol{R}_{ic}^{T}\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})+(\vec{t}_1-\vec{t}_2)]\}\times\delta\vec{r}_2 - \boldsymbol{R}_{ic}^{T}\delta\vec{t}_2}{\delta\boldsymbol{\xi}_2}
+	\end{aligned}
+\end{equation}
+从而可得，
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{r}_2}}= & \boldsymbol{R}_{ic}^{T}\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})+(\vec{t}_1-\vec{t}_2)]\}\times \\
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_2}}= & -\boldsymbol{R}_{ic}^{T}                                                                                                                        
+	\end{aligned}
+\end{equation}
+
+3）、设$\vec{p}_1=
+\left[
+	\begin{matrix} 
+		\theta & \phi & \rho 
+	\end{matrix}
+\right]$，则
+
+\begin{equation}
+	\boldsymbol{P}_1=
+	\left[\begin{matrix}X_1  \\ 
+		Y_1 \\
+		Z_1
+	\end{matrix}\right]
+	=\frac{1}{\rho}  
+	\left[
+		\begin{matrix}
+			cos\phi \cdot sin\theta \\
+			sin\phi                 \\
+			cos\phi \cdot cos\theta 
+		\end{matrix}
+	\right]
+\end{equation}
+
+用链式法则求$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{p}_1}}$，首先
+\begin{equation}
+	\begin {aligned}
+	\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{P}_1}}&=\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}
+	\\
+	\frac{\partial{\boldsymbol{P}_1}}{\partial{\vec{p}_1}}&=
+	\left[
+		\begin{matrix}
+			\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+			0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+			-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+	\right]
+	\end{aligned}
+\end{equation}
+
+可得
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}} {\partial{\vec{p}_1}} &=\frac{\partial{\boldsymbol{P}_2}} {\partial{\boldsymbol{P}_1}} \frac{\partial{\boldsymbol{P}_1}} {\partial{\vec{p}_1}} \\
+		&= \boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}\cdot 
+		\left[
+		\begin{matrix}
+		\frac{cos\phi cos\theta}{\rho}  & -\frac{sin\phi sin\theta}{\rho} & -\frac{cos\phi sin\theta}{\rho^2} \\
+		0                               & \frac{cos\phi}{\rho}            & -\frac{sin\phi}{\rho^2}           \\
+		-\frac{cos\phi sin\theta}{\rho} & -\frac{sin\phi cos\theta}{\rho} & -\frac{cos\phi cos\theta}{\rho^2} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+\section{VIO-InvDepthVariantFactor4 (with extrinsic paras)-By Jin}
+
+\subsection{InvDepthVariantFactor4a}
+经过像素坐标$(u,v)$反投影到归一化平面，得到像素的归一化坐标$(x,y,1)$：
+\begin{equation}
+	\begin{aligned}
+		\left[
+		\begin{matrix}
+		x\\
+		y\\
+		1
+		\end{matrix}
+		\right]
+		=&
+		\left[
+		\begin{matrix}
+		f_x & 0   & c_x \\
+		0   & f_y & c_y \\
+		0   & 0   & 1   
+		\end{matrix}
+		\right]^{-1}
+		\left[
+		\begin{matrix}
+		u\\
+		v\\
+		1
+		\end{matrix}
+		\right] \\
+		\Rightarrow &
+		\left\{
+		\begin{aligned}
+		x=(u-c_x)/f_x\\
+		y=(v-c_y)/f_y
+	\end{aligned}
+	\right.
+	\end{aligned}
+\end{equation}
+因为$(x,y)$可以由像素坐标准确获得，所以特征点参数只需要一个逆深度$\rho$即可。
+所以，
+\begin{equation}
+	\boldsymbol{P}_1=\frac{1}{\rho}
+	\left[
+		\begin{matrix}
+			x \\
+			y \\
+			1 
+		\end{matrix}
+	\right]=
+	\left[
+		\begin{matrix}
+			X_1 \\
+			Y_1 \\
+			Z_1 
+		\end{matrix}
+	\right]
+\end{equation}
+
+InvDepthFactorVariant4a的输入状态有2个，分别为首次观测帧对应IMU的Pose\_i，和点在Pose\_c下的$\rho$。
+$$
+\begin{aligned}
+	\boldsymbol{P}_1  =& \boldsymbol{T}_{ic}^{-1}\boldsymbol{T}_{wi_1}^{-1}\boldsymbol{T}_{wi_1}\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+	\boldsymbol{P}_1 \\
+	\boldsymbol{e}    =& \frac{1}{Z_1}\boldsymbol{K} \boldsymbol{P}_1-uv_1     
+\end{aligned}
+$$
+
+与VIO中的3a类似，这里error相机Pose无关，故两者的Jacobian矩阵也相同：
+\begin{equation}
+	\begin{aligned}
+		\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{R}_1}} & =\boldsymbol{0} \\
+		\frac {\partial{\boldsymbol{e}}}{\partial{\vec{t}_1}}        & =\boldsymbol{0} \\
+	\end{aligned}
+\end{equation}
+
+求$\boldsymbol{e}$对$\rho$的导数，首先用链式法则：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial\boldsymbol{e}}{\partial\boldsymbol{P}_1}=&\boldsymbol{K}
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_1} & 0             & -\frac{X_1}{Z_1^2} \\
+		0             & \frac{1}{Z_1} & -\frac{Y_1}{Z_1^2} 
+		\end{matrix}
+		\right]\\
+		\frac{\partial\boldsymbol{P}_1}{\partial\rho}=&-\frac{1}{\rho^2}
+		\left[
+		\begin{matrix}
+		x\\
+		y\\
+		1
+		\end{matrix}
+		\right] = -\frac{1}{\rho}
+		\left[
+		\begin{matrix}
+		X_1 \\
+		Y_1 \\
+		Z_1 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+可得，
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{e}}}{\partial{\rho}}&=\boldsymbol{0} 
+	\end{aligned}
+\end{equation}
+
+所以InvDepthFactorVariant4a对位姿和特征点的导数都为$\boldsymbol{0}$，即没有贡献，
+在InvDepthFactorVariant4中可以不使用。
+
+\subsection{InvDepthVariantFactor4b}
+InvDepthFactorVariant3b的输入状态有3个，分别为首次观测帧对应IMU的Pose\_i1、当前观测帧对应IMU的Pose\_i2和点在Pose\_c1下的InvDepth。考虑到IMU-Camera外参$\boldsymbol{T}_{ic}$，error为像素平面的重投影误差：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2  = & \boldsymbol{T}_{ic}^{-1}\boldsymbol{T}_{wi_2}^{-1}\boldsymbol{T}_{wi_1}\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T & -\boldsymbol{R}_{ic}^T\vec{t}_{ic} \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2^T & -\boldsymbol{R}_2^T\vec{t}_2 \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right] \\&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_1 & \vec{t}_1 \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic} & \vec{t}_{ic} \\
+		\boldsymbol{0}^T & 1
+		\end{matrix}
+		\right]\boldsymbol{P}_1
+		\\=&
+		\boldsymbol{R}_{ic}^T\left\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic} )+(\vec{t}_1-\vec{t}_2)]-\vec{t}_{ic} \right\}\\
+		\boldsymbol {e}       =&\frac{1}{Z_2}\boldsymbol K\boldsymbol{P}_2 -uv_2 =\frac{1}{Z_2}\boldsymbol K                               
+		\left[
+		\begin{matrix}
+		X_2 \\
+		Y_2 \\
+		Z_2 
+		\end{matrix}
+		\right]-uv_2 \\
+	\end{aligned}
+\end{equation}
+
+首先求$\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}$
+\begin{equation}
+	\begin{aligned}
+		\frac {\partial{\boldsymbol{e}}}{\partial{\boldsymbol{P}_2}}&=\boldsymbol K 
+		\left[
+		\begin{matrix}
+		\frac{1}{Z_2} & 0             & -\frac{X_2}{Z_2^2} \\
+		0             & \frac{1}{Z_2} & -\frac{Y_2}{Z_2^2} 
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation} 
+
+下面我们将$\boldsymbol{T}$转换到李代数$\mathfrak{se}(3)$上使用加法，同时对$\boldsymbol{R}$和$\vec{t}$施加微小扰动，按照导数的定义，用链式法则对$\boldsymbol{T}_1,\boldsymbol{T}_2$求导。对$\vec{p}_1$的求导根据导数的定义可以推出。\\
+（2）接下来求$\boldsymbol{P}_2$对3个变量（位姿包含2个，实际上是5个）的jacobian。 \\
+1）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{T}_1}}$， 先将$\boldsymbol{T}_1$映射到李代数$\boldsymbol{\xi}_1$，施加扰动量$\delta \vec{r}_1$和$\delta\vec{t}_1$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{\xi}_1'                         & =\boldsymbol{\xi}_1 \cdot \delta \boldsymbol{\xi}_1 \\&=
+		\left[
+		\begin{matrix}  
+		\boldsymbol{R}_1                            & \vec{t}_1                                           \\  
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix} 
+		exp(\delta \vec{r}_1\times)                 & \delta\vec{t}_1                                     \\
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]\\&=
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1exp(\delta \vec{r}_1\times) & \boldsymbol{R}_1\delta \vec{t}_1+\vec{t}_1          \\ 
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+代入$\boldsymbol{P}_2$
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\boldsymbol{\xi}_1')          = & \boldsymbol{T}_{ic}^{-1}\boldsymbol{T}_{wi_2}^{-1}\boldsymbol{\xi}_{wi_1}'\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T                       & -\boldsymbol{R}_{ic}^T\vec{t}_{ic}                                                                           \\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2^T                          & -\boldsymbol{R}_2^T\vec{t}_2                                                                                 \\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right] \\ &
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_1exp(\delta \vec{r}_1\times) & \boldsymbol{R}_1\delta \vec{t}_1+\vec{t}_1                                                                   \\ 
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}                         & \vec{t}_{ic}                                                                                                 \\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]\boldsymbol{P}_1 \\= &
+		\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1(\boldsymbol{I}+\delta\vec{r}_1\times)\boldsymbol{R}_{ic}\boldsymbol{P}_1+ \\& 
+		\boldsymbol{R}_{ic}\boldsymbol{R}_2^T[\boldsymbol{R}_1(\boldsymbol{I}+\delta\vec{r}_1\times)\vec{t}_{ic}+\boldsymbol{R}_1\delta\vec{t}_1+\vec{t}_1]-\\ &
+		\boldsymbol{R}_{ic}^T(\boldsymbol{R}_2^T\vec{t}_2+\vec{t}_{ic})
+	\end{aligned}
+\end{equation}
+
+求导
+$$
+\begin{aligned}
+	\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{\xi}_1}} & = 
+	\lim_{\delta\boldsymbol{\xi}_1\rightarrow0}
+	\frac{\boldsymbol{P}_2(\boldsymbol{\xi}_1')- \boldsymbol{P}_2(\boldsymbol{\xi}_1)}
+	{\delta\boldsymbol{\xi}_1}
+	\\&=
+	\lim_{\delta\boldsymbol{\xi}_1\rightarrow0}
+	\frac{-\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1[(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})\times]\delta\vec{r}_1+
+	\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1\delta\vec{t}_1}
+	{\delta\boldsymbol{\xi}_1}
+\end{aligned}
+$$
+
+从而可得：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{r}_1}}= & -\boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1[(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})\times] \\
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_1}}= & \boldsymbol{R}_{ic}^T\boldsymbol{R}_2^{T}\boldsymbol{R}_1                                                            
+	\end{aligned}
+\end{equation}
+
+2）、$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{T}_2}}$，与$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{T}_1}}$类似
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{\xi}_2'=                        & \boldsymbol{\xi}_2 \cdot \delta \boldsymbol{\xi}_2 = 
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_2exp(\delta \vec{r}_2\times) & \boldsymbol{R}_2\delta \vec{t}_2+\vec{t}_2           \\ 
+		\boldsymbol{0}^T                            & 1                                                    
+		\end{matrix}
+		\right] \\
+	\end{aligned}
+\end{equation}
+所以，
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_2(\boldsymbol{\xi}_2')     = & \boldsymbol{T}_{ic}^{-1}\boldsymbol{\xi}_{wi_2}'^{-1}\boldsymbol{T}_{wi_1}\boldsymbol{T}_{ic}\boldsymbol{P}_1 \\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T                       & -\boldsymbol{R}_{ic}^T\vec{t}_{ic}\\
+		\boldsymbol{0}^T                            & 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_2exp(\delta \vec{r}_2\times)& \boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2\\
+		0&1 
+		\end{matrix} 
+		\right]^{-1} \\&
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_1& \vec{t}_1\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]   
+		\left[ 
+		\begin{matrix}  
+		\boldsymbol{R}_{ic}& \vec{t}_{ic}\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\=&
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ic}^T& -\boldsymbol{R}_{ic}^T\vec{t}_{ic}\\
+		\boldsymbol{0}^T& 1                                                                                                            
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix}
+		exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}& -exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)\\
+		0&1 
+		\end{matrix} 
+		\right] \\&
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1\boldsymbol{R}_{ic}& \boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]   
+		\boldsymbol{P}_1\\=&
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_{ic}^Texp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T} & -\boldsymbol{R}_{ic}^{T}exp(-\delta \vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)-\boldsymbol{R}_{ic}^T\vec{t}_{ic}\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]  \\ &
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_1\boldsymbol{R}_{ic} & \boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1\\ 
+		\boldsymbol{0}^T&1
+		\end{matrix}
+		\right]
+		\boldsymbol{P}_1 \\=& 
+		\boldsymbol{R}_{ic}^{T}(\boldsymbol{I}-\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}\boldsymbol{P}_1+\boldsymbol{R}_{ic}^{T}(\boldsymbol{I}-\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)-\\ &
+		\boldsymbol{R}_{ic}^{T}(\boldsymbol{I}-\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)-\boldsymbol{R}_{ic}^{T}\vec{t}_{ic}
+		\\=&
+		[\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}-\boldsymbol{R}_{ic}^{T}(\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}]\boldsymbol{P}_1+ \\ &
+		[\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)-\boldsymbol{R}_{ic}^{T}(\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)] - \\ &
+		[\boldsymbol{R}_{ic}^{T}\delta\vec{t}_2+\boldsymbol{R}_{ic}\boldsymbol{R}_2^T\vec{t}_2-\boldsymbol{R}_{ic}^T(\delta\vec{r}_2\times)\boldsymbol{R}_2^{T}(\boldsymbol{R}_2\delta\vec{t}_2+\vec{t}_2)]-\\&
+		\boldsymbol{R}_{ic}\vec{t}_{ic} \\ \approx&
+		[\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}\boldsymbol{P}_1+\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}(\boldsymbol{R}_1\vec{t}_{ic}+\vec{t}_1)-\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2\vec{t}_2-\boldsymbol{R}_{ic}\vec{t}_{ic}]+ \\&
+		\boldsymbol{R}_{ic}^{T}\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})+(\vec{t}_1-\vec{t}_2)]\}\times\delta\vec{r}_2- \\&
+		\boldsymbol{R}_{ic}^{T}\delta\vec{t}_2
+	\end{aligned}
+\end{equation}
+
+求导
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{\xi}_2}} & = 
+		\lim_{\delta\boldsymbol{\xi}_2\rightarrow0}\frac{\boldsymbol{P}_2(\boldsymbol{\xi}'_2)\}-  \boldsymbol{P}_2(\boldsymbol{\xi}_2)}{\delta\boldsymbol{\xi}_2}\\&=
+		\lim_{\delta\boldsymbol{\xi}_2\rightarrow0}\frac{\boldsymbol{R}_{ic}^{T}\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})+(\vec{t}_1-\vec{t}_2)]\}\times\delta\vec{r}_2 - \boldsymbol{R}_{ic}^{T}\delta\vec{t}_2}{\delta\boldsymbol{\xi}_2}
+	\end{aligned}
+\end{equation}
+从而可得，
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{r}_2}}= & \boldsymbol{R}_{ic}^{T}\{\boldsymbol{R}_2^{T}[\boldsymbol{R}_1(\boldsymbol{R}_{ic}\boldsymbol{P}_1+\vec{t}_{ic})+(\vec{t}_1-\vec{t}_2)]\}\times \\
+		\frac{\partial{\boldsymbol{P}_2}}{\partial{\vec{t}_2}}= & -\boldsymbol{R}_{ic}^{T}                                                                                                                        
+	\end{aligned}
+\end{equation}
+
+3）、设$\vec{p}_1=
+\left[
+	\begin{matrix} 
+		\theta & \phi & \rho 
+	\end{matrix}
+\right]$，则
+
+\begin{equation}
+	\boldsymbol{P}_1=
+	\left[\begin{matrix}X_1  \\ 
+		Y_1 \\
+		Z_1
+	\end{matrix}\right]
+	=\frac{1}{\rho}  
+	\left[
+		\begin{matrix}
+			x \\
+			y \\
+			1 
+		\end{matrix}
+	\right]
+\end{equation}
+
+用链式法则求$\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{p}_1}}$，首先
+\begin{equation}
+	\begin {aligned}
+	\frac{\partial{\boldsymbol{P}_2}}{\partial{\boldsymbol{P}_1}}&=\boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}
+	\\
+	\frac{\partial\boldsymbol{P}_1}{\partial\rho}=&-\frac{1}{\rho^2}
+		\left[
+			\begin{matrix}
+				x\\
+				y\\
+				1
+			\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+
+可得
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{\boldsymbol{P}_2}} {\partial{\vec{p}_1}} &=\frac{\partial{\boldsymbol{P}_2}} {\partial{\boldsymbol{P}_1}} \frac{\partial{\boldsymbol{P}_1}} {\partial{\vec{p}_1}} \\
+		&= \boldsymbol{R}_{ic}^{T}\boldsymbol{R}_2^{T}\boldsymbol{R}_1\boldsymbol{R}_{ic}\cdot 
+		\left(-\frac{1}{\rho^2}\right)
+		\left[
+		\begin{matrix}
+		x\\
+		y\\
+		1
+		\end{matrix}
+		\right] 
+	\end{aligned}
+\end{equation}
+	
+\end{document}
