@@ -5,6 +5,7 @@
 \usepackage{amsmath}
 \usepackage{bbold}
 \usepackage{amssymb}  % 德文尖角体，李代数符号使用
+\usepackage{listings} % 编程语言排版
 
 % 公式按章节编号
 \makeatletter
@@ -20,7 +21,10 @@
 \begin{document}
 \maketitle
 
-\section{gtsam-ProjectionFactor}
+\section{PriorFactor}
+$H$矩阵都是单位阵
+
+\section{ProjectionFactor}
 gtsam每一个factor都是一个class，包含构造函数（输入状态变量）、error（求残差）等方法。
 
 \subsection{Viusal only (no extrinsic paras)}\label{section:VisualPrj}
@@ -277,7 +281,7 @@ $$
 	\boldsymbol{R}^T
 \end{equation}
 
-\subsection{Viusal-Inertial (with extrinsic parameters)}
+\subsection{Viusal-Inertial (with extrinsic parameters)}\label{section:VIOPrj}
 注意这里的状态量是$\boldsymbol{T}_{wi}$和$\boldsymbol{p}_w$，在VIO中要考虑IMU-Camera外参$\boldsymbol{T}_{ic}$，重投影误差如下：
 \begin{equation}
 	\begin{aligned}
@@ -318,7 +322,7 @@ $$
 	\label{equation:reprj_err}
 \end{equation}
 
-我们按照\ref{section:VisualPrj}中的方式，对IMU的旋转和平移施加扰动
+我们按照(\ref{section:VisualPrj})中的方式，对IMU的旋转和平移施加扰动
 \subsubsection{$\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{wi}}}$}
 $$
 \begin{aligned}
@@ -438,7 +442,7 @@ $$
 	\boldsymbol{H}_1                         & =                   
 	\left[                        
 	\begin{matrix}
-	-(\boldsymbol{P}_c\times)                & \boldsymbol{I}      \\
+	(\boldsymbol{P}_c\times)                 & -\boldsymbol{I}     \\
 	\boldsymbol{0}^T                         & \boldsymbol{0}^T    
 	\end{matrix}
 	\right]\\
@@ -456,10 +460,10 @@ $$
 这里$\boldsymbol{H}_1$和Visual-only中相同，只是多了一项$\boldsymbol{H}_0$。下面比较我们的推导和gtsam的推导，将$\boldsymbol{P}_c$代入并展开公式(\ref{Gtsam_dPc_dTiw})：
 \begin{equation}
 	\begin{aligned}
-		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{iw}}}                                    & =                   
+		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{wi}}}                                    & =                   
 		\left[          
 		\begin{matrix}
-		-(\boldsymbol{P}_c\times)                                                                           & \boldsymbol{I}      \\
+		(\boldsymbol{P}_c\times)                                                                           & -\boldsymbol{I}      \\
 		\boldsymbol{0}^T                                                                                    & \boldsymbol{0}^T    
 		\end{matrix}
 		\right]
@@ -471,13 +475,13 @@ $$
 		\right]\\&=
 		\left[                        
 		\begin{matrix}
-		-(\boldsymbol{P}_c\times)\boldsymbol{R}_{ci}+(\vec{t}_{ci}\times) \boldsymbol{R}_{ci}               & \boldsymbol{R}_{ci} \\
+		(\boldsymbol{P}_c\times)\boldsymbol{R}_{ci}-(\vec{t}_{ci}\times) \boldsymbol{R}_{ci}               & -\boldsymbol{R}_{ci} \\
 		\boldsymbol{0}^T                                                                                    & \boldsymbol{0}^T    
 		\end{matrix}
 		\right]\\&=
 		\left[
 		\begin{matrix}
-		-(\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}\boldsymbol{p}_w+ \vec{t}_{ci}))\times \boldsymbol{R}_{ci} & \boldsymbol{R}_{ci} \\
+		(\boldsymbol{R}_{ci}(\boldsymbol{R}_{wi}^T\boldsymbol{p}_w + \boldsymbol{R}_{wi}^T\vec{t}_{wi}))\times \boldsymbol{R}_{ci} & -\boldsymbol{R}_{ci} \\
 		\boldsymbol{0}^T                                                                                    & \boldsymbol{0}^T    
 		\end{matrix}
 		\right]
@@ -488,11 +492,11 @@ $$
 我们的推导为：
 \begin{equation}
 	\begin{aligned}
-		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{iw}}}               & =                   
+		\frac{\partial{\boldsymbol{P}_c}}{\partial{\boldsymbol{T}_{wi}}}                                      & =                   
 		\left[
 		\begin{matrix}
-		-\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}  \boldsymbol{p}_w+\vec{t}_{iw})\times & \boldsymbol{R}_{ci} \\ 
-		\boldsymbol{0}^T                                                               & \boldsymbol{0}^T    
+		\boldsymbol{R}_{ci}(\boldsymbol{R}_{wi}^T  \boldsymbol{p}_w+\boldsymbol{R}_{wi}^T\vec{t}_{wi})\times & -\boldsymbol{R}_{ci} \\ 
+		\boldsymbol{0}^T                                                                                      & \boldsymbol{0}^T    
 		\end{matrix}
 		\right] 
 		\label{Gtsam_dPc_dTiw_Jin}
@@ -501,13 +505,65 @@ $$
 
 比较(\ref{Gtsam_dPc_dTiw_2})和(\ref{Gtsam_dPc_dTiw_Jin})，我们需要验证：
 \begin{equation} 
-	-(\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}\boldsymbol{p}_w+ \vec{t}_{ci}))\times \boldsymbol{R}_{ci}=
-	-\boldsymbol{R}_{ci}(\boldsymbol{R}_{iw}  \boldsymbol{p}_w+\vec{t}_{iw})\times 
+	(\boldsymbol{R}_{ci}(\boldsymbol{R}_{wi}^T\boldsymbol{p}_w+\boldsymbol{R}_{wi}^T\vec{t}_{wi}))\times \boldsymbol{R}_{ci}=
+	\boldsymbol{R}_{ci}(\boldsymbol{R}_{wi}^T  \boldsymbol{p}_w+\boldsymbol{R}_{wi}^T\vec{t}_{wi})\times 
 	\label{equation:crossmulti4orthmat}
 \end{equation} 
-当$\boldsymbol{R}$为正交矩阵即$\boldsymbol{R}^{-1}=\boldsymbol{R}^T$时，对任意向量$\vec{a}$，有$\boldsymbol{R}(\vec{a}\times)=((\boldsymbol{R}\vec{a})\times)\boldsymbol{R}$，故(\ref{equation:crossmulti4orthmat})式成立
-			
-\section{gtsam-InvDepthVariantFactor3 for Viusal \\only}
+当$\boldsymbol{R}$为正交矩阵即$\boldsymbol{R}^{-1}=\boldsymbol{R}^T$时，对任意向量$\vec{a}$，有$\boldsymbol{R}(\vec{a}\times)=((\boldsymbol{R}\vec{a})\times)\boldsymbol{R}$，故(\ref{equation:crossmulti4orthmat})式成立，可知gtsam的算法和我们的推导等价。但其求导原理有待深究，需参考李群相关章节。
+
+\section{ProjectionFactorPPP}
+继承自ProjectionFactor, 会估计body-camera外参.
+
+\begin{itemize}
+	\item errorfunc: $f(\boldsymbol{T}_{ni},\boldsymbol{T}_{ic}, \boldsymbol{p}_{w}) = 
+	      (\boldsymbol{T}_{ni}\boldsymbol{T}_{ic})^{-1}\boldsymbol{p}_{w} - uv$
+	\item States:   
+	      \subitem $\boldsymbol{T}_{ni}$ —— body(imu) pose
+	      \subitem $\boldsymbol{T}_{ic}$ —— body(imu)-camera extrinsic transformation pose
+	      \subitem $\boldsymbol{p}_{w}$ —— point xyz in world frame
+	\item Measurement:  $uv$ —— pixel measurement
+\end{itemize}
+我们再次写出重投影误差：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{P}_c                         & =(\boldsymbol{T}_{wi}\boldsymbol{T}_{ic})^{-1}\boldsymbol{p}_w                                 \\&=
+		\left(
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{wi}\boldsymbol{R}_{ic}   & \boldsymbol{R}_{wi}\vec{t}_{ic}+\vec{t}_{wi}                                                   \\
+		\boldsymbol{0}^T                         & 1                                                                                              
+		\end{matrix}
+		\right]
+		\right)^{-1}\boldsymbol{p}_w \\&=                              
+		\left[
+		\begin{matrix}
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T & -\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T(\boldsymbol{R}_{wi}\vec{t}_{ic}+\vec{t}_{wi})        \\
+		\boldsymbol{0}^T                         & 1                                                                                              
+		\end{matrix}
+		\right]\boldsymbol{p}_w \\&=
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\boldsymbol{p}_w  -\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T(\boldsymbol{R}_{wi}\vec{t}_{ic}+\vec{t}_{wi}) \\&=
+		\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\boldsymbol{p}_w  +\vec{t}_{ci}-\boldsymbol{R}_{ci}\boldsymbol{R}_{wi}^T\vec{t}_{wi} \\&=
+		\left[
+		\begin{matrix}
+		X'\\
+		Y'\\                                         
+		Z' 
+		\end{matrix}
+		\right] \\
+		\boldsymbol {e}                          & =\frac{1}{Z'}\boldsymbol{K} (\boldsymbol{T}_{wi}\boldsymbol{T}_{ic})^{-1}\boldsymbol{p}_w  -uv \\&=
+		\frac{1}{Z'}\boldsymbol{K} 
+		\left[
+		\begin{matrix}
+		X'\\
+		Y'\\                                         
+		Z'
+		\end{matrix}
+		\right]-uv
+	\end{aligned}
+\end{equation}
+从(\ref{section:VIOPrj})
+
+\section{InvDepthVariantFactor3 for Vision only}
 下表是InvDepthVariantFactor3a和InvDepthVariantFactor3b的状态量比较，注意两者输入的landmark都是在相机系下的InvDepth形式。
 \begin{table}[H]
 	\caption{a，b两个版本的InvDepthVariantFactor3比较}
@@ -1734,7 +1790,7 @@ $$
 	\end{aligned}
 \end{equation}
 
-可得
+可得，
 \begin{equation}
 	\begin{aligned}
 		\frac{\partial{\boldsymbol{P}_2}} {\partial{\vec{p}_1}} &=\frac{\partial{\boldsymbol{P}_2}} {\partial{\boldsymbol{P}_1}} \frac{\partial{\boldsymbol{P}_1}} {\partial{\vec{p}_1}} \\
@@ -1749,5 +1805,123 @@ $$
 		\right] 
 	\end{aligned}
 \end{equation}
+
+\section{GPSFactor in GTSAM}
+errorfunc: $f(\boldsymbol{T}) = \boldsymbol{T}.t - t_{GPS}$
+\begin{itemize}
+	\item State:  $\boldsymbol{T}$ —— body pose 
+	\item Measurement:  $t_{GPS}$ —— GPS translation/position
+\end{itemize}
+使用李群求导：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}'                          =\boldsymbol{\xi} \cdot \delta \boldsymbol{\xi} = 
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}(\boldsymbol{I}+\delta \vec{r}\times) & \boldsymbol{R}\delta \vec{t}+\vec{t}          \\ 
+		\boldsymbol{0}^T                            & 1                                                   
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+可得，
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{f(\boldsymbol{T})}}{\partial{\boldsymbol{\xi}}} & = 
+		\lim_{\delta\boldsymbol{\xi}\rightarrow0}\frac{f(\boldsymbol{\xi}')-  f(\boldsymbol{\xi})}{\delta\boldsymbol{\xi}}\\&=
+		\lim_{\delta\boldsymbol{\xi}\rightarrow0}\frac{\boldsymbol{R}\delta \vec{t}+\vec{t} - \vec{t}}{\delta\boldsymbol{\xi}}
+	\end{aligned}
+\end{equation}
+故：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{f(\boldsymbol{T})}}{\partial{\boldsymbol{R}}} & = \boldsymbol{0} \\
+		\frac{\partial{f(\boldsymbol{T})}}{\partial{\vec{t}}} & = \boldsymbol{R}
+	\end{aligned}
+\end{equation}
+
+从直觉上看，函数$f(\boldsymbol{T}) = \boldsymbol{T}.t - t_{GPS}$对$t$的导数应该是单位阵，但是应用李群求导之后却不同。
+由此可见，李群求导与常规认识是有区别的，这是由于李群将旋转和平移做了深度绑定，二者总是同步出现，互相关联。按Frank的说法，返回到正切空间(Tangent Vector)得到的导数会变的weird。
+
+\section{GPSLAFactor By Jin}
+LA(lever Arm)即杆臂，表示GPS天线相位中心在IMU坐标系下的坐标$t_{ig}$。在gtsam中的求导与$GPSFactor$类似。
+
+\begin{itemize}
+	\item errorfunc: $f(\boldsymbol{T}_{ni}) = (\boldsymbol{T}_{ni}\boldsymbol{T}_{ig}).t - t_{GPS}$
+	\item State:  $\boldsymbol{T}_{ni}$ —— body pose 
+	\item Measurement:  $t_{GPS}$ —— GPS translation/position
+\end{itemize}
+简写上下标，使用李群求导：
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}'                          =          & (\boldsymbol{\xi} \cdot \delta \boldsymbol{\xi})\cdot\boldsymbol{T}_{ig} 
+		        &   \\=                                                   & 
+		\left[                                                                   
+		\begin{matrix} 
+		\boldsymbol{R}(\boldsymbol{I}+\delta \vec{r}\times) & \boldsymbol{R}\delta \vec{t}+\vec{t}                                     \\ 
+		\boldsymbol{0}^T                                    & 1                                                                        
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_{ig}                                 & \vec{t}_{ig}                                                             \\ 
+		\boldsymbol{0}^T                                    & 1                                                                        
+		\end{matrix}
+		\right] &   \\=                                                   & 
+		\left[                                                                   
+		\begin{matrix} 
+		\boldsymbol{R}(\boldsymbol{I}+\delta \vec{r}\times)\boldsymbol{R}_{ig} & \boldsymbol{R}(\boldsymbol{I}+\delta \vec{r}\times)\vec{t}_{ig} + \boldsymbol{R}\delta \vec{t}+\vec{t}                                     \\ 
+		\boldsymbol{0}^T                                    & 1                                                                        
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{T}                          =          & \boldsymbol{T}_{ni} \cdot\boldsymbol{T}_{ig} 
+		        &   \\=                                                   & 
+		\left[                                                                   
+		\begin{matrix} 
+		\boldsymbol{R} & \vec{t}                                     \\ 
+		\boldsymbol{0}^T  & 1                                                                        
+		\end{matrix}
+		\right]
+		\left[ 
+		\begin{matrix} 
+		\boldsymbol{R}_{ig}                                 & \vec{t}_{ig}                                                             \\ 
+		\boldsymbol{0}^T                                    & 1                                                                        
+		\end{matrix}
+		\right] &   \\=                                                   & 
+		\left[                                                                   
+		\begin{matrix} 
+		\boldsymbol{R}\boldsymbol{R}_{ig} & \boldsymbol{R}\vec{t}_{ig}+\vec{t}                                     \\ 
+		\boldsymbol{0}^T                                    & 1                                                                        
+		\end{matrix}
+		\right]
+	\end{aligned}
+\end{equation}
+可得，
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{f(\boldsymbol{T})}}{\partial{\boldsymbol{\xi}}} & = 
+		\lim_{\delta\boldsymbol{\xi}\rightarrow0}\frac{f(\boldsymbol{\xi}')-  f(\boldsymbol{\xi})}{\delta\boldsymbol{\xi}}\\&=
+		\lim_{\delta\boldsymbol{\xi}\rightarrow0}\frac{\boldsymbol{R}(\delta{r}\times)\vec{t}_{ig}+\boldsymbol{R}\delta \vec{t}}{\delta\boldsymbol{\xi}}\\&=
+		\lim_{\delta\boldsymbol{\xi}\rightarrow0}\frac{-\boldsymbol{R}(\vec{t}_{ig}\times)\delta{r}+\boldsymbol{R}\delta \vec{t}}{\delta\boldsymbol{\xi}}
+	\end{aligned}
+\end{equation}
+故：
+\begin{equation}
+	\begin{aligned}
+		\frac{\partial{f(\boldsymbol{T})}}{\partial{\boldsymbol{R}}} & = -\boldsymbol{R}(\vec{t}_{ig}\times) \\
+		\frac{\partial{f(\boldsymbol{T})}}{\partial{\vec{t}}} & = \boldsymbol{R}
+	\end{aligned}
+\end{equation}
+注意两点：
+\begin{itemize}
+	\item  与$\boldsymbol{R}_{ig}$有关的项都消掉了，说明求导与i，g相对旋转无关；
+	\item  gtsam原有的GPSfactor是本例的特例
+\end{itemize}
+
+\section{VIG Initialization}
 	
 \end{document}

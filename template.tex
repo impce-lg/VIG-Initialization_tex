@@ -60,6 +60,7 @@
 
 %=================================================================
 % Add packages and commands here. The following packages are loaded in our class file: fontenc, inputenc, calc, indentfirst, fancyhdr, graphicx,epstopdf, lastpage, ifthen, lineno, float, amsmath, setspace, enumitem, mathpazo, booktabs, titlesec, etoolbox, tabto, xcolor, soul, multirow, microtype, tikz, totcount, amsthm, hyphenat, natbib, hyperref, footmisc, url, geometry, newfloat, caption
+\usepackage{subfigure}
 
 %=================================================================
 %% Please use the following mathematics environments: Theorem, Lemma, Corollary, Proposition, Characterization, Property, Problem, Example, ExamplesandDefinitions, Hypothesis, Remark, Definition, Notation, Assumption
@@ -67,10 +68,10 @@
 
 %=================================================================
 % Full title of the paper (Capitalized)
-\Title{Initialization for Integration of Monocular Vision, INS and GNSS}
+\Title{Fast and Accurate Initialization for Monocular Vision/INS/GNSS Integrated System on Vehicle}
 
 % Author Orchid ID: enter ID or remove command
-\newcommand{\orcidauthorA}{0000-0000-000-000X} % Add \orcidA{} behind the author's name
+\newcommand{\orcidauthorA}{0000-0003-2035-8950} % Add \orcidA{} behind the author's name
 %\newcommand{\orcidauthorB}{0000-0000-000-000X} % Add \orcidB{} behind the author's name
 
 % Authors, for the paper (add full first names)
@@ -98,10 +99,53 @@ $^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
 %\conference{} % An extended version of a conference paper
 
 % Abstract (Do not insert blank lines, i.e. \\) 
-\abstract{A single paragraph of about 200 words maximum. For research articles, abstracts should give a pertinent overview of the work. We strongly encourage authors to use the following style of structured abstracts, but without headings: (1) Background: Place the question addressed in a broad context and highlight the purpose of the study; (2) Methods: Describe briefly the main methods or treatments applied; (3) Results: Summarize the article's main findings; and (4) Conclusion: Indicate the main conclusions or interpretations. The abstract should be an objective representation of the article, it must not contain results which are not presented and substantiated in the main text and should not exaggerate the main conclusions.}
+\abstract{The integration of camera, inertial measurement units (IMU) 
+or inertial navigation system (INS), 
+and Global Navigation Satellite System (GNSS) has a great potential 
+for localization and navigation. 
+Fast and accurate state estimation is a fundamental task for the 
+integrated system.
+Due to the nonlinearity of the coupling system, the performance of the 
+integrated system is highly dependent on the accuracy of its initial 
+values including navigation states, gravity, IMU biases, and visual 
+scale. 
+In this paper, we propose a novel approach to achieve a fast and 
+accurate initialization for the integrated system, and evaluate its 
+capacities with six vehicle tests in different illumination and 
+obstructions scenarios. 
+With the outputs from GNSS real-time kinematic (RTK) algorithm, the 
+rough roll, pitch, yaw, and the direction of gravity are calculated. 
+Based on these initial states and gravity, the GNSS/INS fusion 
+and Visual-Inertial Odometry (VIO) are simultaneously launched whenever 
+the observations are available. 
+Subsequently, a coarse scale is retrieved by assigning the initial 
+states of GNSS/INS fusion to VIO procedure. 
+This scale, rather than the arbitrary scale set in most VIO or 
+simultaneously localization and mapping (SLAM) 
+frameworks, can be utilized to get poses and points very close to the 
+real world. 
+Thus, the points that are too distant from the camera and may have 
+larger noises than nearby ones are treated as outliers and removed in 
+our method. 
+Once the VIO estimation converges, the transformation parameters 
+between the poses of VIO and GNSS/INS fusion are estimated via 
+non-linear optimization.
+Thus, we can align these two trajectories and evaluate the scale error. 
+Through the six vehicle tests in different scenarios, we compare the 
+performance of the proposed approach with that of the state-of-the-art 
+VIO algorithm VI ORB-SLAM2 and VINS-Mono.
+The results indicated that the Visual-Inertial parameters converge in <9 
+seconds in our method and in 15 seconds for VI ORB-SLAM2. 
+The scale errors of both our method and VI ORB-SLAM2 are mostly within 
+10\%.
+The alignment errors are mostly in centimeter level in our method, which is 
+comparable to VI ORB-SLAM2 and VINS-Mono. 
+% Therefore, the approach proposed in this study was effective for the 
+% increasing demands of  multi-sensor integration.
+}
 
 % Keywords
-\keyword{keyword 1; keyword 2; keyword 3 (list three to ten pertinent keywords specific to the article, yet reasonably common within the subject discipline.)}
+\keyword{ Initialization; Multi-sensor integration; GNSS/INS; VIO; Convergence; Alignment.}
 
 % The fields PACS, MSC, and JEL may be left empty or commented out if not applicable
 %\PACS{J0101}
@@ -133,112 +177,357 @@ $^{2}$ \quad Affiliation 2; e-mail@e-mail.com}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
-There has been increasing demands for accurate  ego-motion estimation in the field of robots, such as unmanned aerial vehicles (UAVs) and autonomous driving. In order to achieve 6 degrees-of-freedom(DOF) pose of a robot in real time, various sensors such as Global Navigation Satellite System(GNSS, including GPS, BDS, GLONASS and GALILEO), inertial measurement units(IMU, also known as Inertial Navigation System, INS), and cameras have been used\cite{hongVisualInertialOdometryRobust2018}.  GNSS can estimate the global positions in ECEF frame without error accumulation, but it is low-rate and easily affected by the surroundings. IMU can get high-rate measurements of acceleration and angular velocity,  but it suffers from time-varying bias drift. Images contain rich features, which can be used to construct of the environment, and Visual SLAM may always be more precise than other sensors. Nevertheless, camera is vulnerable to motion blur from fast motions, the metric scale is ambiguous, and noises increases with time. As such sensors are mutually complementary\cite{huangOnlineInitializationExtrinsic2020}, multi-sensor fusion such as GNSS/INS coupled navigation, monocular visual-inertial odometry(VIO), GNSS/SLAM integration \cite{chenIntegrationLowcostGNSS2018}, Visual-Inertial-Magnetic combination \cite{wangVIMOVisualInertialMagneticNavigation2020}, has been active research topics in the last two decades. In recent years, integration of Monocular Vision, INS and GNSS has been attracting great interest among researchers because of their more impressive accuracy and robustness.
+There has been increasing demands for accurate  ego-motion estimation 
+in the field of mobile robots, such as unmanned aerial vehicles 
+(UAVs) and autonomous driving.
+In order to achieve 6 degrees-of-freedom (DOF) pose and 
+three-dimensional (3D) velocity of a robot in real time, various 
+sensors such as GNSS (including GPS, BDS, GLONASS and 
+GALILEO), IMU, and cameras have been used \cite{hongVisualInertialOdometryRobust2018}.  
+GNSS, the only global high-precision and high-stability infrastructure 
+providing Positioning, Navigation, and Timing (PNT) \cite{liuRolePathVision2020}, 
+can estimate the global coordinates in Earth-Centered, Earth-Fixed (ECEF) 
+frame without error accumulation, IMU can get high-rate measurements of 
+acceleration and angular velocity, images contain rich features, which may 
+always be very precise. 
+However, GNSS signal is low-rate and easily affected by surroundings, 
+IMU and image measurements suffers from error drift.
+Lots of multi-sensor integration such as GNSS/INS coupled navigation, 
+visual-inertial odometry (VIO), has been active research 
+topics in the last two decades, which can overcome the shortcomings 
+of a single technique. 
+The GNSS/INS fusion offers an accurate and complete measurement 
+of the robot’s states, and can provide continuous navigation estimation 
+with high rate. 
+However, the system relies on INS alone and its errors can drift rapidly 
+in the absence of GNSS signal \cite{changGNSSINSLiDARSLAM2019a}.
+Another fusion scheme VIO have gained much attention in the field of 
+robot navigation and augmented reality \cite{xufumuAccurateInitialState2018}. 
+The state-of-the-art optimization-based systems include VINS-Mono 
+\cite{qinVINSMonoRobustVersatile2017}, OKVIS \cite{leuteneggerKeyframeBasedVisualInertialSLAM2013}, 
+and VI ORB-SLAM2 \cite{mur-artalVisualInertialMonocularSLAM2017a}.
+However, VIO is not a drift-free system, for errors of both visual 
+and inertial measurements diverge with time.
+Motivated by the purpose of robust, accurate and drift-free pose 
+estimation in large-scale autonomous navigation, Vision/INS/GNSS 
+coupled system (also known as GNSS-aided VIO, or Vision-aided GNSS/INS 
+integration) has been a trending topic in recent years 
+\cite{cioffiTightlycoupledFusionGlobal2020}. 
+It is believed that camera, INS, GNSS module will become standard 
+configuration for most UAVs and autonomous vehicles, since such 
+sensors are getting cheaper, smaller, lower in power consumption \cite{chiangPerformanceAnalysisINS2020a}. 
+Early works in \cite{shunsukeGNSSINSOnboard2015,sahmoudiAnalysisNavigationSystem2016,kimTightlycoupledIntegrationGPS2016,adeelResearchPerformanceAnalysis2017,leeIntermittentGPSaidedVIO} 
+carry out the estimation through filter-based methods, which only 
+update the last state, global position measurements were first aided 
+for VIO with a pose-graph optimization estimator in \cite{mascaroGOMSFGraphOptimizationBased2018}. 
+Yu et al. \cite{yuGPSaidedOmnidirectionalVisualInertial2019} put 
+forward a tightly-coupled sliding window optimization for visual and 
+inertial measurements with loosely-coupled GPS refinement. 
+Differently from \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, 
+the work in \cite{cioffiTightlycoupledFusionGlobal2020} tightly 
+couple the GPS using the IMU pre-integration algorithm to 
+efficiently derive the global positional factors, which allows 
+adding multiple global factors per keyframe in the sliding window 
+with insignificant extra computational cost. 
 
-The performance of multi-sensor fusion relies heavily on the initial states, including pose and velocity. Due to the nonlinearity of the fusion systems,  a good initialization can provide initial estimate near to the optimal solution, resulting in faster convergence of the optimization and low risk of a local minimum\cite{harsanyiMASATFastRobust2019}. The initialization of GNSS/INS integration is the alignment of the computational navigation frame and the local level navigation frame, and the core part of the initial alignment is to determine the attitude matrix between the body frame and reference navigation frame. For the low-cost INS, the noise threshold of gyros is near
-or higher than the Earth’s rotation rate($\approx{15^{\circ}/h}$). In this respect, the GNSS-aided velocity matching alignment is applicable to determine the initial state coupling GNSS and low-cost imu, but it will take tens of seconds to converge and may suffer from large initial attitude estimation error\cite{huangNewFastInMotion2018}. Another approach of fusion is the widely researched VIO, whose initialization task includes  estimation of the gravity direction, imu bias and monocular scale, which makes it a more challenging problem. Since pose estimation problem for visual-inertial systems may not have a unique solution depending on the types of motion\cite{martinelliClosedFormSolutionVisualInertial2014}, Bootstrapping a VIO system requires careful treatment, to avoid incorrect system parameters breaking the system. However, to the best of our knowledge, there is not much work in contemporary publications studied the initialization of Monocular Vision, INS, GNSS fusion. Such a system will take  an initial value from VIO initialization, and then align rotation to GNSS coordinate frame, i.e., the global frame. As a result, it can not overcome the shortcomings of VIO initialization.
+State estimation is a key task for the integrated system.
+Due to the nonlinearity of the integrated system, non-linear 
+optimization-based strategies have become widely used.
+Thus, a good initialization to provide linearization points close to 
+the optimal solution, is necessary for faster convergence of the 
+optimization and low risk of a local minimum 
+\cite{harsanyiMASATFastRobust2019}. 
+Researches on initialization of Vision/INS/GNSS integration
+are rare.
+An initialization method of GPS-aided visual-inertial system is 
+introduced in \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, 
+the VIO initialization procedure follows the same one as \cite{qinRobustInitializationMonocular2017}, 
+which ignores accelerometer bias. 
+The initialization approach of \cite{leeIntermittentGPSaidedVIO} is 
+similar to \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, 
+the alignment computes the rotation from world frame (defined 
+by VIO) to global frame based on the assumption that there is only 
+yaw rotation between such two frames. 
+As the initialization for Vision/INS/GNSS integration aims to 
+estimate initial navigation states, gravity, IMU bias, visual 
+scale, some of which are goals in the initialization of GNSS/INS or 
+VIO as well, therefore the procedures of the three schemes share 
+some steps.
+The initialization of GNSS/INS integration is the alignment of the 
+computational navigation frame and the local level navigation frame, 
+and the core part of the initial alignment is to determine the 
+transformation between the body frame and reference navigation frame 
+\cite{huangNewFastInMotion2018}. 
+For the low-cost INS, the noise threshold of gyros is near or higher 
+than the Earth’s rotation rate($\approx{15^{\circ}/h}$). 
+As a result, roll and pitch determination can be obtained with 
+stationary accelerometer measurements, however, yaw can not be 
+determined. 
+In this respect, the GNSS-aided velocity matching alignment is 
+applicable to determine the initial state coupling GNSS and low-cost 
+imu while in motion \cite{shinAccuracyImprovementLow}, but it will 
+take tens of seconds to converge and may suffer from large initial 
+attitude estimation error \cite{huangNewFastInMotion2018}. 
+The initial value of  accelerometer and gyroscope bias are set zeros, 
+and they will converge with a long period of time, which depends on 
+the INS noise level and the GNSS accuracy. 
+For the widely researched VIO, the initialization task includes 
+estimation of the gravity direction, imu bias and monocular scale, 
+which makes it a more challenging problem. 
+Since pose estimation problem for visual-inertial systems may not 
+have a unique solution depending on the types of motion 
+\cite{martinelliClosedFormSolutionVisualInertial2014}, 
+Bootstrapping a VIO system requires careful treatment, to avoid 
+incorrect system parameters breaking the system. 
+The work in \cite{kneipDeterministicInitializationMetric2011} 
+presents a deterministic closed-form solution for computing the 
+gravity orientation and the visual scale of a VIO system, but the 
+system is unstable due to the lacks of estimation for accelerometer 
+and gyroscope biases. 
+Similar to \cite{kneipDeterministicInitializationMetric2011}, the 
+gyroscope bias in the initialization procedure of \cite{yangMonocularVisualInertial2017,martinelliClosedFormSolutionVisualInertial2014} 
+is neglected, this kind of works above will lead to inaccurate 
+initial states. 
+The researchers of \cite{faesslerAutomaticReinitializationFailure2015} 
+present a re-initialization and failure recovery algorithm assumes that 
+the UAVs should keep horizontally at the beginning, to accomplish the 
+initialization process. The method proposed in \cite{weissInertialOpticalFlow2015} 
+requires that the initial attitude to be aligned with the
+gravity direction. Based on these early studies, pioneering works are 
+proposed in \cite{mur-artalVisualInertialMonocularSLAM2017a} and 
+\cite{qinRobustInitializationMonocular2017}. The initial estimation 
+in \cite{mur-artalVisualInertialMonocularSLAM2017a} compute the scale, 
+gravity direction, velocity and IMU biases for the visual-inertial 
+full BA with a prior processing of keyframes by a monocular SLAM module. 
+The work in \cite{qinRobustInitializationMonocular2017} also estimate 
+the scale, gravity direction, velocity and gyroscope bias, but it 
+ignores the accelerometer bias to ensure fast convergence, resulting 
+in a lot of resources cost to refine the gravity and scale. 
+As pointed out in \cite{martinelliClosedFormSolutionVisualInertial2014}, 
+the gravity and accelerometer bias are difficult to be perfectly 
+distinguished without sufficient excited motion, the initialization 
+systems in \cite{mur-artalVisualInertialMonocularSLAM2017a,qinRobustInitializationMonocular2017} 
+may easily get ill-conditioned, leading to incorrect state solutions. 
+To avoid mixing gravity and accelerometer bias, Li et al. 
+\cite{liRapidRobustMonocular2019} propose to use the detected vertical 
+edges to estimate a better gravity. 
+However, in order to obtain effective edges which are parallel to 
+gravity, some human-made structures are needed.
+A disjoint visual-inertial initialization approach proposed in \cite{camposInertialOnlyOptimizationVisualInertial2020}, 
+which regards the problem as an inertial-only one, and takes 
+the probabilistic model of IMU noises, while the inertial-only 
+optimization relies on a precise vision-only MAP estimation 
+up-to-scale.
 
-In this paper, we propose a novel approach for the initialization of Mono Vision, INS, GNSS integration.
- 
+
+In this paper, a novel initialization scheme for Mono Vision/INS/GNSS 
+integration is designed. 
+Firstly, GNSS RTK measurements are used to calculate the initial navigation 
+states, thus, the direction of gravity is determined by initial altitude.
+Then, GNSS/INS fusion thread can be launched to estimate the navigation 
+states under global frame.
+Hence, we can assign initial pose of VIO with GNSS/INS fusion, to constrain 
+the orientation of VIO under global frame as well.
+Since the vision algorithm Structure From Motion (SFM) retrieves poses with 
+arbitrary scale, a coarse VIO scale can be calculated by its assigned poses.
+Once VIO estimation converges, the alignment between trajectories of VIO and 
+GNSS/INS fusion is conducted, and the scale error is evaluated as well.
+
+The remaining of the research is organized as follows.
+In Section \ref{Methods}, the mathematical preliminaries of 
+Vision/INS/GNSS integration and the proposed initialization approach are 
+presented.
+In Section \ref{Experiments}, the tests in various scenarios and the 
+experimental results are described in details.
+At last, we draw a conclusion and present the future prospects in 
+Section \ref{Conclusions}.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Related Work}
+\section{Methods}
 
-It is believed that camera, INS, GNSS module will become standard configuration for most UAVs and autonomous vehicles, since such sensors are getting cheaper, smaller in size, lower in power consumption, and a wide spectrum of fusion algorithms or systems have been studied for their complementary. Research on robot state estimation is extensive. We focus on initialization methodology of vision, INS, GNSS related fusion algorithms. 
-
-INS is a self-contained system and can avoid interference from the outside environment, which determines the pose and velocity based on the measurements of the accelerometer and gyroscope with a deadreckoning procedure\cite{huangNewFastInMotion2018}. The coupling of INS and GNSS offers an accurate and complete measurement of the robot’s states, and thus has been applied in many navigation scenarios\cite{zhongAdaptiveInFlightAlignment2018}. Since the bias and noise level of low-cost INS are much greater than the Earth’s rotation rate, the roll and pitch can be obtained with stationary accelerometer measurements, however, the heading can not be determined, the GNSS-aided velocity matching alignment can be used to align the INS while in
-motion \cite{shinAccuracyImprovementLow}. The initial value of  accelerometer and gyroscope bias are set zeros, and they will converge with a long period of time, which depends on the INS noise level and the GNSS accuracy. Another approach derived from the optimization-based alignment for high-accuracy INS, the so-called dynamic attitude estimation based initial alignment (DAEBIA) methods, have been researched \cite{wuVelocityPositionIntegration2013b,changOptimizationbasedAlignmentStrapdown2016}. The authors of \cite{huangNewFastInMotion2018} proposed a new fast in-motion coarse alignment method, to speed up the coarse alignment process. 
-
-Monocular visual–inertial SLAM systems have gained much attention in the field of robot navigation and augmented reality\cite{xufumuAccurateInitialState2018}. Numerous modern image based VIO methods have been built, they can be categorized into filter-based \cite{tanskanenSemidirectEKFbasedMonocular2015,Bloesch2017Iterated,liHighprecisionConsistentEKFbased2013} and optimization-based(also known as Bundle Adjustment, BA) algorithms\cite{qinVINSMonoRobustVersatile2017,leuteneggerKeyframeBasedVisualInertialSLAM2013,mur-artalVisualInertialMonocularSLAM2017a}. Comparing to graph-based optimization, Filter-based algorithms are suitable for computing
-resource-constrained platforms\cite{huangOnlineInitializationExtrinsic2020}, but may lead to a suboptimal problem because of early fix of linearization
-points \cite{yangMonocularVisualInertial2017}. Therefore, optimization-based method is more accuracy than filter-based one theoretically, which makes it a trending framework over time. Some state-of-the-art optimization-based systems are VINS-Mono \cite{qinVINSMonoRobustVersatile2017}, OKVIS \cite{leuteneggerKeyframeBasedVisualInertialSLAM2013}, and VIORB \cite{mur-artalVisualInertialMonocularSLAM2017a}. In general, some of the initial parameters(velocity, gravity direction, and INS bias) are ignored or assumed to be known, or the system should stay stationary and horizontal before launch, which are not suitable for initialization of in-motion systems without prior information \cite{qinRobustInitializationMonocular2017}. The work in \cite{kneipDeterministicInitializationMetric2011} presents a deterministic closed-form solution for computing the gravity orientation and the visual scale of a VIO system, but the system is unstable due to the lacks of estimation for accelerometer and gyroscope biases. Similar to \cite{kneipDeterministicInitializationMetric2011}, the gyroscope bias in the initialization procedure of \cite{yangMonocularVisualInertial2017,martinelliClosedFormSolutionVisualInertial2014} is neglected, this kind of works above will lead to inaccurate initial states. The researchers of \cite{faesslerAutomaticReinitializationFailure2015} present a re-initialization and failure recovery algorithm assumes that the UAVs should keep horizontally at the beginning, to accomplish the initialization process. The method proposed in \cite{weissInertialOpticalFlow2015} requires that the initial attitude to be aligned with the
-gravity direction. Based on these early studies, pioneering works are proposed in \cite{mur-artalVisualInertialMonocularSLAM2017a} and \cite{qinRobustInitializationMonocular2017}. The initial estimation in \cite{mur-artalVisualInertialMonocularSLAM2017a} compute the scale, gravity direction, velocity and IMU biases for the visual-inertial full BA with a prior processing of keyframes by a monocular SLAM module. The work in \cite{qinRobustInitializationMonocular2017} also estimate the scale, gravity direction, velocity and gyroscope bias, but it ignores the accelerometer bias to ensure fast convergence, resulting in a lot of resources cost to refine the gravity and scale. As pointed out in \cite{martinelliClosedFormSolutionVisualInertial2014}, the gravity and accelerometer bias are difficult to be perfectly distinguished if without rich motion, the initialization systems in \cite{mur-artalVisualInertialMonocularSLAM2017a,qinRobustInitializationMonocular2017} may easily get ill-conditioned, leading to incorrect state solutions. To avoid mixing gravity and accelerometer bias, the authors of \cite{liRapidRobustMonocular2019} propose to use the detected vertical edges to estimate a better gravity. However, in order to obtain effective edges which are parallel to gravity, some human-made structures are needed. Among the works above, either vision or INS is not able to provide global measurements, hence VIO can only estimate the initial states in the local frame, which is often user-defined, it may be not suitable for robots in  long-term outdoor environments.
-
-Motivated by the purpose of robust, drift-free pose estimation in large-scale autonomous navigation, Vision/INS/GNSS coupled system(also known as GNSS-aided VIO, or Vision-aided GNSS/INS integration) has been a trending topic in recent years \cite{cioffiTightlycoupledFusionGlobal2020}. Early works in \cite{shunsukeGNSSINSOnboard2015,sahmoudiAnalysisNavigationSystem2016,kimTightlycoupledIntegrationGPS2016,adeelResearchPerformanceAnalysis2017,leeIntermittentGPSaidedVIO} carry out the estimation through filter-based methods, which only update the last state. Global position measurements were first aided for VIO with a pose-graph optimization estimator in \cite{mascaroGOMSFGraphOptimizationBased2018,qinGeneralOptimizationbasedFramework2019a}, while such algorithms are loosely-coupled ones which only align the independently processed relative pose from VIO to the global frame via pose-graph optimization. The authors of \cite{yuGPSaidedOmnidirectionalVisualInertial2019} put forward a tightly-coupled sliding window optimization for visual and inertial measurements with loosely-coupled GPS refinement. Differently from \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, the work in \cite{cioffiTightlycoupledFusionGlobal2020} tightly couple the GPS using the IMU pre-integration algorithm to efficiently derive the global positional factors, which allows adding multiple global factors per keyframe in the sliding window with insignificant extra computational cost. An initialization method of GPS-aided monocular visual-inertial system is introduced in \cite{yuGPSaidedOmnidirectionalVisualInertial2019}, which is loosely-coupled, meaning that the initial states were estimated by the VIO initialization procedure and only then aligned to the global frame. The initialization method of \cite{leeIntermittentGPSaidedVIO} is similar to \cite{yuGPSaidedOmnidirectionalVisualInertial2019}. The alignment aim to compute the rotation from world frame(defined by VIO) to global frame based on the assumption that there is only yaw rotation between such two frames. 
-
-To . 
+This part starts with the definition of the notations. 
+The inertial frame has its origin at the center of Earth and axes 
+which are non-rotating with respect to the fixed stars, it is the 
+measurement reference of IMU. 
+We denote $\left( \cdot\right)_N$ as the navigation frame which has 
+its origin coinciding with that of the sensor frame, and x-axis 
+pointing towards geodetic north, z-axis parallel to the gravity 
+direction, and y-axis completing a right-handed orthogonal frame, 
+i.e. the north-east-down (NED) coordinate system. 
+Therefore, the gravity vector can be written as $\boldsymbol{g} = \left[\begin{matrix} 0 & 0 & g \end{matrix}\right]^T$. 
+GNSS observations are commonly converted to NED coordinate frame, 
+from the latitude, longitude, and altitude in the geodetic coordinate 
+system, by setting a datum point. 
+Correspondingly, VIO system estimates its states under the VIO frame, 
+also called World frame $\left( \cdot\right)_W$, which can be defined 
+at arbitrary origin and directions.
+In general, the navigation states including pose, velocity, and  
+feature point positions are represented in navigation frame, thus we can 
+define $x_k$ as the state at time stamp $k$, instead of $x_k^n$. 
+The IMU frame is an orthogonal axis set which is aligned to the vehicle 
+body frame $\left( \cdot\right)_b$, hence we treat the IMU frame as the 
+body frame. 
+We consider $\left( \cdot\right)_{c}$ as the camera frame, in which 
+the normalized features can be expressed. 
+The matrix $\boldsymbol{T}_{XY} = \left[\begin{matrix} \boldsymbol{R}_{XY} & _X\boldsymbol{t}_{Y} \end{matrix}\right]$ 
+means the transformation from frame $Y$ to frame $X$, 
+where $\boldsymbol{R}_{XY} \in SO(3)$ and $_X\boldsymbol{t}_{Y} \in \mathbb{R}^3$ 
+are the rotation and translation respectively,  also can be used to 
+transform the point coordinate in frame $Y$ to frame $X$, i.e., 
+$\boldsymbol{p}_X = \boldsymbol{T}_{XY} \cdot \boldsymbol{p}_Y$. 
+We regard $\boldsymbol{T}_{NB}$ as the body pose, $\boldsymbol{T}_{BC}$ 
+as the transformation from camera frame $C$ to body frame $B$, also 
+known as the extrinsic calibration. 
+We use $\widetilde{(\cdot)}$to denote sensor measurements, which may 
+be affected by noise. 
+Based on the assumption that the intrinsic parameter of the camera and 
+extrinsic parameter between the camera and IMU has been calibrated 
+before the algorithm, we provide some preliminary knowledge about 
+the sensor measurements and models.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{System Preliminaries}
-This part starts with the definition of the notations. The inertial frame has its origin at the center of Earth and axes which are non-rotating with respect to the fixed stars, it is the measurement reference of IMU. We denote $\left( \cdot\right)_n$ as the navigation frame which has its origin coinciding with that of the sensor frame, and x-axis pointing towards geodetic north, z-axis parallel to the gravity direction, and y-axis completing a right-handed orthogonal frame, i.e. the north-east-down (NED) system. Therefore, the gravity vector can be written as $\boldsymbol{g} = \left[\begin{matrix} 0 & 0 & g \end{matrix}\right]^T$. In general, the navigation states include pose, velocity, and the features positions are represented in navigation frame, thus we can define $x_k$ as the state at time stamp$k$, instead of $x_k^n$. The IMU frame is an orthogonal axis set which is aligned to the vehicle body frame $\left( \cdot\right)_b$, hence we treat IMU frame as the body frame. We consider $\left( \cdot\right)_{c}$ as the camera frame, in which the normalized features can be expressed. The matrix $\boldsymbol{T}_{XY} = \left[\begin{matrix} \boldsymbol{R}_{XY} & \boldsymbol{t}_{XY} \end{matrix}\right]$ means the transformation from frame $Y$ to frame $X$, where $\boldsymbol{R}_{XY} \in SO(3)$ and $\boldsymbol{t}_{XY} \in \mathbb{R}^3$ are the rotation and translation respectively,  also can be used to transform the point coordinate in frame $Y$ to frame $X$, i.e., $\boldsymbol{p}_X = \boldsymbol{T}_{XY} \cdot \boldsymbol{p}_Y$. We regard $\boldsymbol{T}_{NB}$ as the body pose, $\boldsymbol{T}_{BC}$ as the transformation from camera frame $C$ to body frame $B$, also known as the extrinsic calibration. We use $\widetilde{(\cdot)}$to denote sensor measurements, which may be affected by noise and bias. With the assumption that the intrinsic parameter of the camera and extrinsic parameter between the camera and IMU has been calibrated before the algorithm, we provide some preliminary knowledge about the sensor measurements, models.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Factor Graph Optimization Model}
-We utilize the factor graph model as the optimization framework \cite{loeligerIntroductionFactorGraphs2008,dellaertFactorGraphsRobot2017}, which is one of most widely used graph models for the maximum a posteriori(MAP) estimation. Considering the general case, the inference problem $\boldsymbol{x}^{MAP} = \arg\max p(\boldsymbol{x|z})$ can be factorized as:
+\subsection{System Preliminaries}
+\subsubsection{Factor Graph Optimization Model}
+Numerous modern VIO frameworks have been built, they can be categorized into 
+filter-based \cite{tanskanenSemidirectEKFbasedMonocular2015,Bloesch2017Iterated,
+liHighprecisionConsistentEKFbased2013} and optimization-based algorithms 
+\cite{qinVINSMonoRobustVersatile2017,leuteneggerKeyframeBasedVisualInertialSLAM2013,
+mur-artalVisualInertialMonocularSLAM2017a}. 
+Comparing to graph-based optimization, Filter-based algorithms are suitable for 
+computing resource-constrained platforms \cite{huangOnlineInitializationExtrinsic2020}, 
+but may lead to a suboptimal problem because of early fix of linearization
+points \cite{yangMonocularVisualInertial2017}. 
+Therefore, optimization-based method is more accuracy than filter-based one 
+theoretically, which makes it a trending scheme over time. 
+
+We utilize the factor graph model as the optimization framework 
+\cite{loeligerIntroductionFactorGraphs2008,dellaertFactorGraphsRobot2017}, 
+which is one of the most widely-used graph models for the maximum a 
+posteriori (MAP) estimation. 
+Considering the general case, the inference problem $\boldsymbol{x}^{MAP} = \arg\max p(\boldsymbol{x|z})$ can be factorized as:
 \begin{equation}
 	p(\boldsymbol{x|z}) = \prod_{i=1}^{k} p(x_{k}|z_{k}) = \prod_{i=1}^{k} f_i(x_i)
 \end{equation}
-where $\boldsymbol{z}$ and $\boldsymbol{x}$ are measurements and states respectively, and with gaussian assumption we have $f_i(x_i) \propto exp \left( -\frac{1}{2}\Vert h_i(x_i) -z_i \Vert^2 \right)$, each factor $fi$ represents an error function that should be minimized, it is also a measurement unit in a graphical model known as a factor graph. Computing the MAP estimation is equivalent to running inference over the factor graph \cite{indelmanInformationFusionNavigation2013}. To avoid the involved computational complexity, we use the incremental smoothing developed in \cite{kaessISAM2IncrementalSmoothing2012}.
+where $\boldsymbol{z}$ and $\boldsymbol{x}$ are measurements and 
+states respectively, and with the gaussian assumption we have $f_i(x_i) \propto exp \left( -\frac{1}{2}\Vert h_i(x_i) -z_i \Vert^2 \right)$, each factor $fi$ represents an error function that should be minimized, it is also a measurement unit in a graphical model known as a factor graph. 
+Computing the MAP estimation is equivalent to running inference 
+over the factor graph \cite{indelmanInformationFusionNavigation2013}. 
+To avoid the involved computational complexity, we use the incremental 
+smoothing developed in \cite{kaessISAM2IncrementalSmoothing2012}.
 
-\subsection{GNSS Positional Measurements}
-The GNSS measurement at epoch $k$ is given by the equation:
+\subsubsection{GNSS Measurements}
+The GNSS measurement at epoch $k$ is given by:
 \begin{equation}
-    \boldsymbol{z}_k^G = \boldsymbol{h}(\boldsymbol{x}_k)^G+\boldsymbol{n}^G
+	\boldsymbol{z}_k^G = \boldsymbol{h}(\boldsymbol{x}_k)^G+\boldsymbol{n}^G
 \end{equation}
-where $h^G$ is the function linking the vehicle's position and the GNSS measurement $z^G_k$, and $n^G$ is the measurement noise. Given the lever-arm between GNSS antenna center and  the IMU measurement center, $h^G$ will contain the rotation\cite{farrellAidedNavigationGPS2008}. Therefore, if the lever-arm is a zero vector, i.e., GNSS antenna and IMU share the same center, GNSS measurements have no contribution for rotation estimation. 
+where $h^G$ is the function linking the vehicle's position and the 
+GNSS measurement $z^G_k$, and $n^G$ is the measurement noise. 
+Given the lever arm between GNSS antenna center and  the IMU measurement 
+center, $h^G$ will contain the rotation\cite{farrellAidedNavigationGPS2008}. 
 
-\subsection{Monocular Vision}
-We use a monocular pinhole camera model with a known calibration matrix $\boldsymbol{K}$ to predict the image observation, via the non-linear function $\pi$: 
+\subsubsection{Monocular Vision}
+We use a monocular pinhole camera model with a known calibration matrix 
+$\boldsymbol{K}$ to predict the image observation via the non-linear 
+function $\pi$: 
 \begin{equation}
-    \boldsymbol{\pi}(\boldsymbol{x,l}) = \boldsymbol{K}
-    \left[\begin{matrix} \boldsymbol{R}_{CN} & \boldsymbol{t}_{CN} \end{matrix}\right]{_N}\boldsymbol{l}
+	\boldsymbol{\pi}(\boldsymbol{x,l}) = \boldsymbol{K}
+	\left[\begin{matrix} \boldsymbol{R}_{CN} & _C\boldsymbol{t}_{N} \end{matrix}\right]\boldsymbol{l}_{N}
 \end{equation}
-where $\boldsymbol{K}$ is the camera intrinsic calibration. $\boldsymbol{x}$ is the inverse of camera pose, $\boldsymbol{l}$ represents the landmark in the navigation frame, they are states to be estimated. Both landmark and predicted image observation are expressed in homogeneous coordinates. Given the known image measurement $\boldsymbol{z}(u,v)$, the re-projection error is:
+where $\boldsymbol{K}$ is the camera intrinsic calibration. 
+$\boldsymbol{x}$ is the inverse of camera pose, $\boldsymbol{l}$ 
+represents the landmark in the navigation frame, they are the states 
+to be estimated. 
+Both landmark and predicted image observation are expressed in 
+homogeneous coordinates. 
+Given the known image measurement $\boldsymbol{z}(u,v)$, the 
+re-projection error is:
 \begin{equation}
-    \boldsymbol{e}(\boldsymbol{x,l}) = \boldsymbol{z} - \boldsymbol{\pi}(\boldsymbol{x,l})
+	\boldsymbol{e}(\boldsymbol{x,l}) = \boldsymbol{z} - \boldsymbol{\pi}(\boldsymbol{x,l})
 \end{equation}
-By minimizing the re-projection error, we can recover the relative pose up to an unknown scale within multiple frames. With the known calibration between body and camera frame, we can transform the camera pose to the navigation state. Such problem is known as full SLAM or BA, requires adding the unknown landmarks into the optimization. Alternatively, one can apply the multi-view geometry, instead of the re-projection equation, to avoid the including the unknown landmarks. 
-
-\subsection{IMU Measurements}
-\unskip
-\subsubsection{IMU Kinematic Model}
-An IMU sensor usually contains a 3-axis gyroscope sensor and a 3-axis accelerometer, which can measure the angular velocity and the acceleration of the inertial sensor, i.e., the body frame, with respect to inertial frame. IMU provides outputs at a much higher rate than GNSS and visual measurements. IMU measurements are polluted by two error sources: a white noise $\boldsymbol{\eta}(t)$, and a random walk slow time-varying bias $\boldsymbol{b}(t)$. Therefore, the IMU measurement model can be constructed as:
-\begin{equation}
-    {_B}\widetilde{\boldsymbol{\omega}}_{NB}(t) = {_B}\boldsymbol{\omega}{_NB}(t) + \boldsymbol{b}_g(t) + \boldsymbol{\eta}_g(t)
-\end{equation}
-\begin{equation}
-    {_B}\widetilde{\boldsymbol{a}}(t) = \boldsymbol{R}_{NB}^T(t)({_N}\boldsymbol{a}(t)-{_N}\boldsymbol{g}) + \boldsymbol{b}_a(t) + \boldsymbol{\eta}_a(t)
-\end{equation}
-where ${_B}\widetilde{\boldsymbol{\omega}}_{NB}(t)$ and ${_B}\widetilde{\boldsymbol{a}}(t)$ are respectively the measured angular velocity and linear acceleration in the body frame $b$, the real angular velocity $\boldsymbol{\omega}(t)$ and linear acceleration $\boldsymbol{a}(t)$ are what we need. $\boldsymbol{R}_{NB}$ maps a point or vector from body frame to navigation frame $N$, ${_N}\boldsymbol{g}$ is gravity under $N$ frame. We ignore effects due to earth’s rotation, which means we can assume $N$ is an inertial frame. The time-varying bias $\boldsymbol{b}_g(t)$ and $\boldsymbol{b}_a(t)$ are modeled as:
-\begin{equation}
-    \boldsymbol{\dot{b}}_g(t) = \boldsymbol{\eta}_{b_g}(t),
-    \boldsymbol{\dot{b}}_a(t) = \boldsymbol{\eta}_{b_a}(t)
-\end{equation}
-
-To infer the motion state, we utilize the kinematic model in \cite{forsterOnManifoldPreintegrationRealTime2017}:
-\begin{equation}
-	\left\{
-	\begin{aligned}
-		{_N}\boldsymbol{\dot{R}}_{NB} & = \boldsymbol{R}_{NB} \cdot (_{B}\boldsymbol{\omega}){\land} \\
-		{_N}\boldsymbol{\dot{v}}^n   & = {_N}\boldsymbol{a}                                      \\
-		{_N}\boldsymbol{\dot{p}}   & = {_N}\boldsymbol{v}                                        
-	\end{aligned}
-	\right.,\quad
-	where \quad \boldsymbol{\omega}^{\land}=\left[
-		\begin{matrix}
-			0         & -\omega_z & \omega_y  \\
-			\omega_z  & 0         & -\omega_x \\
-			-\omega_y & \omega_x  & 0         
-		\end{matrix}
-    \right]
-    \label{IMU-kinematic-model}
-\end{equation}
-
-During the short time interval $\left[t,t+\Delta{t}\right]$,  we can assume that ${_N}\boldsymbol{a}$ and ${_B}\boldsymbol{\omega}_{NB}$ stay constant. We can obtain the pose and velocity at time $t+\Delta{t}$ via integrating Eq. (\ref{IMU-kinematic-model}):
-\begin{equation}
-	\boldsymbol{R}(t+\Delta{t})  = \boldsymbol{R}(t) Exp \left((\widetilde{\boldsymbol{\omega}}(t) - \boldsymbol{b}_g(t) - \boldsymbol{\eta}_g(t)) \Delta{t} \right)
-	\label{model-integration-1}
-\end{equation}
-\begin{equation}
-	\boldsymbol{v}(t+\Delta{t}) = \boldsymbol{v}(t) + \boldsymbol{g}\Delta{t} + \boldsymbol{R}(t) \left(  \widetilde{\boldsymbol{a}}(t) - \boldsymbol{b}_a(t) - \boldsymbol{\eta}_a(t) \right) \Delta{t}
-	\label{model-integration-2}
-\end{equation}
-\begin{equation}
-	\boldsymbol{p}(t+\Delta{t}) = \boldsymbol{p}(t) + \boldsymbol{v}(t)\Delta{t} + \frac{1}{2}\boldsymbol{g}\Delta{t}^2 + \frac{1}{2} \boldsymbol{R}(t) \left(  \widetilde{{_N}\boldsymbol{a}}(t) - \boldsymbol{b}_a(t) - \boldsymbol{\eta}_a(t) \right) \Delta{t}^2
-	\label{model-integration-3}
-\end{equation}
-We have substituted IMU measurements into the equations, and we dropped the coordinate frame subscripts for readability. 
+By minimizing the re-projection error, we can recover the relative 
+pose up to an unknown scale within multiple frames. 
+With the known calibration between body and camera frame, we can 
+transform the camera pose to the navigation state. 
+Such a problem is known as full SLAM or BA, which requires adding the 
+unknown landmarks into the optimization. 
+Alternatively, one can apply the multi-view geometry, instead of 
+the re-projection equation to avoid including the unknown 
+landmarks. 
 
 \subsubsection{IMU Pre-integration on Manifold}
-Assuming that IMU is synchronized with the camera and provides measurements at discrete times $k$, we can iterate the integration Eqs. (\ref{model-integration-1}-\ref{model-integration-3}). To avoid recompute the integration whenever the linearization point changes, we follow \cite{forsterOnManifoldPreintegrationRealTime2017} and apply the following relative motion increments between two consecutive keyframes that are independent of the pose and velocity at $t_i$:
+An IMU sensor usually contains a 3-axis gyroscope sensor and a 
+3-axis accelerometer, which can measure the angular velocity and 
+the acceleration of the inertial sensor, i.e., the body frame, 
+with respect to the inertial frame. 
+% IMU provides outputs at a much higher rate than GNSS and visual 
+% measurements. 
+% IMU measurements are polluted by two error sources: a white noise 
+% $\boldsymbol{\eta}(t)$, and a random walk slow time-varying bias 
+% $\boldsymbol{b}(t)$. 
+% Therefore, the IMU measurement model can be constructed as 
+% \begin{equation}
+% 	{_B}\widetilde{\boldsymbol{\omega}}_{NB}(t) = {_B}\boldsymbol{\omega}{_NB}(t) + \boldsymbol{b}_g(t) + \boldsymbol{\eta}_g(t)
+% \end{equation}
+% \begin{equation}
+% 	{_B}\widetilde{\boldsymbol{a}}(t) = \boldsymbol{R}_{NB}^T(t)({_N}\boldsymbol{a}(t)-{_N}\boldsymbol{g}) + \boldsymbol{b}_a(t) + \boldsymbol{\eta}_a(t)
+% \end{equation}
+% where ${_B}\widetilde{\boldsymbol{\omega}}_{NB}(t)$ and ${_B}\widetilde{\boldsymbol{a}}(t)$ are respectively the measured angular velocity and linear acceleration in the body frame $b$, the real angular velocity $\boldsymbol{\omega}(t)$ and linear acceleration $\boldsymbol{a}(t)$ are what we need
+% $\boldsymbol{R}_{NB}$ maps a point or vector from the body frame to 
+% navigation frame $N$, ${_N}\boldsymbol{g}$ is gravity under $N$ frame. 
+% We ignore the effects caused by the earth’s rotation, thus we can assume 
+% $N$ is an inertial frame. 
+% The time-varying bias $\boldsymbol{b}_g(t)$ and $\boldsymbol{b}_a(t)$ 
+% are modeled as 
+% \begin{equation}
+% 	\boldsymbol{\dot{b}}_g(t) = \boldsymbol{\eta}_{b_g}(t),
+% 	\boldsymbol{\dot{b}}_a(t) = \boldsymbol{\eta}_{b_a}(t)
+% \end{equation}
+
+% To infer the motion state, we utilize the kinematic model in 
+% \cite{forsterOnManifoldPreintegrationRealTime2017}:
+% \begin{equation}
+% 	\left\{
+% 	\begin{aligned}
+% 		{_N}\boldsymbol{\dot{R}}_{NB} & = \boldsymbol{R}_{NB} \cdot (_{B}\boldsymbol{\omega}){\land} \\
+% 		{_N}\boldsymbol{\dot{v}}^n    & = {_N}\boldsymbol{a}                                         \\
+% 		{_N}\boldsymbol{\dot{p}}      & = {_N}\boldsymbol{v}                                         
+% 	\end{aligned}
+% 	\right.,\quad
+% 	where \quad \boldsymbol{\omega}^{\land}=\left[
+% 		\begin{matrix}
+% 			0         & -\omega_z & \omega_y  \\
+% 			\omega_z  & 0         & -\omega_x \\
+% 			-\omega_y & \omega_x  & 0         
+% 		\end{matrix}
+% 	\right]
+% 	\label{IMU-kinematic-model}
+% \end{equation}
+
+% During the short time interval $\left[t,t+\Delta{t}\right]$,   
+% we can obtain the pose and velocity at time $t+\Delta{t}$ via 
+% integrating IMU measurements:
+% \begin{equation}
+% 	\boldsymbol{R}(t+\Delta{t})  = \boldsymbol{R}(t) Exp \left((\widetilde{\boldsymbol{\omega}}(t) - \boldsymbol{b}_g(t) - \boldsymbol{\eta}_g(t)) \Delta{t} \right)
+% 	\label{model-integration-1}
+% \end{equation}
+% \begin{equation}
+% 	\boldsymbol{v}(t+\Delta{t}) = \boldsymbol{v}(t) + \boldsymbol{g}\Delta{t} + \boldsymbol{R}(t) \left(  \widetilde{\boldsymbol{a}}(t) - \boldsymbol{b}_a(t) - \boldsymbol{\eta}_a(t) \right) \Delta{t}
+% 	\label{model-integration-2}
+% \end{equation}
+% \begin{equation}
+% 	\boldsymbol{p}(t+\Delta{t}) = \boldsymbol{p}(t) + \boldsymbol{v}(t)\Delta{t} + \frac{1}{2}\boldsymbol{g}\Delta{t}^2 + \frac{1}{2} \boldsymbol{R}(t) \left(  \widetilde{{_N}\boldsymbol{a}}(t) - \boldsymbol{b}_a(t) - \boldsymbol{\eta}_a(t) \right) \Delta{t}^2
+% 	\label{model-integration-3}
+% \end{equation}
+% We have substituted IMU measurements into the equations, and dropped 
+% the coordinate frame subscripts for readability. 
+
+Assuming that IMU is synchronized with the camera, we can integrate the 
+IMU measurements. 
+To avoid recompute the integration whenever the linearization point 
+changes, we follow \cite{forsterOnManifoldPreintegrationRealTime2017} 
+and apply the following relative motion increments between two 
+consecutive keyframes that are independent of the pose and velocity 
+at $t_i$:
 \begin{equation}
 	\Delta{\boldsymbol{R}_{ij}} \doteq \boldsymbol{R}_i^T \boldsymbol{R}_j = \prod_{k=i}^{j-1} Exp \left((\widetilde{\boldsymbol{\omega}}_k - \boldsymbol{b}_{g_k} - \boldsymbol{\eta}_{g_k}) \Delta{t} \right)
 \end{equation}
@@ -249,7 +538,9 @@ Assuming that IMU is synchronized with the camera and provides measurements at d
 	\Delta{\boldsymbol{p}_{ij}} \doteq \boldsymbol{R}_i^T(\boldsymbol{p}_j-\boldsymbol{p}_i-\boldsymbol{v}_i\Delta{t_{ij}}-\frac{1}{2}\boldsymbol{g}\Delta{t_{ij}^2}) = \sum_{k=i}^{j-1} \left[ \Delta{\boldsymbol{v}_{ik}}\Delta{t} + \frac{1}{2}\Delta{\boldsymbol{R}_{ik}}(\widetilde{\boldsymbol{a}}_k - \boldsymbol{b}_{a_k} - \boldsymbol{\eta}_{a_k})\Delta{t}^2 \right] 
 \end{equation}
 
-As the noise covariance has a strong influence on the MAP estimator, it is of paramount importance to accurately model the noise covariance. Defining the noise vector as $ \boldsymbol{\eta}_{ik}^{\Delta} \doteq \left[\begin{matrix} \delta{\boldsymbol{\phi}_{ij}^T} & \delta{\boldsymbol{v}_{ij}^T} & \delta{\boldsymbol{p}_{ij}^T} \end{matrix}\right]^T $, the covariance propagation can be written in iterative form:
+As the noise covariance has a strong influence on the MAP estimator, 
+it is of paramount importance to accurately model the noise covariance. 
+Defining the noise vector as $ \boldsymbol{\eta}_{ik}^{\Delta} \doteq \left[\begin{matrix} \delta{\boldsymbol{\phi}_{ij}^T} & \delta{\boldsymbol{v}_{ij}^T} & \delta{\boldsymbol{p}_{ij}^T} \end{matrix}\right]^T $, the covariance propagation can be written in iterative form:
 \begin{equation}
 	\delta{\boldsymbol{\phi}_{ij}} = \Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}\delta{\boldsymbol{\phi}_{i,j-1}} + \boldsymbol{J}_r^{j-1} \boldsymbol{\eta}_{j-1}^{gd}\Delta{t} 
 	\label{nosie-equ1}
@@ -264,7 +555,8 @@ As the noise covariance has a strong influence on the MAP estimator, it is of pa
 	\frac{1}{2}\Delta{\widetilde{\boldsymbol{R}}_{j-1,j}}\boldsymbol{\eta}_{j-1}^{ad}\Delta{t}^2
 	\label{nosie-equ3}
 \end{equation}
-where $\boldsymbol{J}_r$ is the right Jacobian of $SO(3)$, $\boldsymbol{\eta}_{k}^{d}$ is the  discrete-time noise of IMU, whose covariance is a function of the sampling rate. Defining the noise as $\boldsymbol{\eta}_{k}^{d} = \left[ \begin{matrix} \boldsymbol{\eta}_{k}^{gd} & \boldsymbol{\eta}_{k}^{ad}\end{matrix}\right]$, the corresponding covariance as $\boldsymbol{P}_{k}$, we can write the noise equations (\ref{nosie-equ1}-\ref{nosie-equ3}) in compact matrix form, and the preintegrated measurement covariance iteratively:
+where $\boldsymbol{J}_r$ is the right Jacobian of $SO(3)$, $\boldsymbol{\eta}_{k}^{d}$ is the  discrete-time noise of IMU, whose covariance is a function of the sampling rate. 
+Defining the noise as $\boldsymbol{\eta}_{k}^{d} = \left[ \begin{matrix} \boldsymbol{\eta}_{k}^{gd} & \boldsymbol{\eta}_{k}^{ad}\end{matrix}\right]$, the corresponding covariance as $\boldsymbol{P}_{k}$, we can write the noise equations (\ref{nosie-equ1}-\ref{nosie-equ3}) in compact matrix form, and the preintegrated measurement covariance iteratively:
 \begin{equation}
 	\boldsymbol{\eta}_{ij}^{\Delta} = \boldsymbol{A}_{j-1}\boldsymbol{\eta}_{i,j-1}^{\Delta} + \boldsymbol{B}_{j-1} \boldsymbol{\eta}_{j-1}^{d}
 \end{equation}
@@ -272,7 +564,11 @@ where $\boldsymbol{J}_r$ is the right Jacobian of $SO(3)$, $\boldsymbol{\eta}_{k
 	\boldsymbol{P}_{ij} = \boldsymbol{A}_{j-1}\boldsymbol{P}_{i,j-1}\boldsymbol{A}_{j-1}^T + \boldsymbol{B}_{j-1} \boldsymbol{Q}_{\eta} \boldsymbol{B}_{j-1}^T
 \end{equation}
 
-We consider that the biases during the pre-integration period between the interval $\Delta{t}$ is constant. However, the biases change slightly  by a small amount $\delta\boldsymbol{b}$ in the optimization window. To avoid the time -expensive recomputation when the bias changes, we can update the states using a first-order expansion: 
+We consider that the biases during the pre-integration period between 
+the interval $\Delta{t}$ is constant. 
+However, the biases change slightly  by a small amount $\delta\boldsymbol{b}$ in the optimization window
+To avoid the time -expensive recomputation when the bias changes, we 
+can update the states using a first-order expansion: 
 \begin{equation}
 	\boldsymbol{R}_{NB}^{i+1} = \boldsymbol{R}_{NB}^{i} \Delta{\boldsymbol{R}_{i,i+1}} Exp \left(\boldsymbol{J}_{\Delta\boldsymbol{R}}^{\boldsymbol{b}_g}\delta\boldsymbol{b}_g^i \right)
 \end{equation}
@@ -286,119 +582,592 @@ We consider that the biases during the pre-integration period between the interv
 \end{equation}
 Here, the Jacobians can be precomputed during the pre-integration.
 
-\section{Vision/INS/GNSS Initialization}
-We use monocular vision, low-cost INS and GNSS for navigation, the methods in \cite{qinRobustInitializationMonocular2017} and \cite{mur-artalVisualInertialMonocularSLAM2017a} offer the use for reference to our algorithm, and both are state-of-the-art VIO systems. In general, the initialization for VIO estimate the gyroscope bias as the first step, and then formulate system equations including states such as vision scale, accelerometer biases, gravity and velocity. Since the system may easily get ill-conditioned due to the mixture of gravity and accelerometer bias. Such problem will result incorrect solutions, which may break the system. In this paper, using the GNSS observations will decouple vision scale, accelerometer bias and gravity with respective computation. 
+\subsection{Vision/INS/GNSS Initialization}
+\label{Methods}
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.55]{Pic/Flow}
+	\caption{The initialization procedure of the proposed algorithm.
+	$ \boldsymbol{b}_g $ is the gyroscope bias, }
+\end{figure} 
+We use monocular vision, low-cost INS, and GNSS for navigation, the 
+methods in \cite{qinRobustInitializationMonocular2017} and \cite{mur-artalVisualInertialMonocularSLAM2017a} offer the use for reference to our algorithm, and both are state-of-the-art VIO systems. 
+In general, the initialization for VIO estimates the gyroscope bias as 
+the first step and then formulate system equations including states 
+such as vision scale, accelerometer biases, gravity, and velocity. 
+Since the system may easily get ill-conditioned due to the mixture of 
+gravity and accelerometer bias. 
+Such problems will result in incorrect solutions, which may break 
+the system. 
+In this paper, using the GNSS observations will decouple vision scale, 
+accelerometer bias, and gravity with respective computation. 
 
-\subsection{Initial State by GNSS}
-To estimate the global state in $N$ frame, we can directly utilize the initial position and velocity  by GNSS-only measurements. Since GNSS sensor is 3-DOF without rotation information, for the in-motion vehicle, we can use GNSS velocity to obtain the approximate attitude angle to form the rotation matrix. However, we can not achieve roll via GNSS velocity, due to the mounting structure of INS relative to the body, resulting such angle is always roughly set zero. Only pitch and yaw angle can be computed as following:
+
+\subsubsection{Initial State by GNSS}
+To estimate the global state in $N$ frame, we can directly utilize the 
+initial position and velocity  by GNSS-only measurements. 
+Since the GNSS sensor is 3-DOF without rotation information, for the 
+in-motion vehicle, we can use GNSS velocity to obtain the approximate 
+attitude angle to form the rotation matrix. 
+However, we can not achieve roll via GNSS velocity, which is always 
+roughly set zero, due to the mounting structure of INS relative to the 
+body.
+Pitch and yaw angle can be computed as 
 \begin{equation}
-	\theta = tan^{-1} \left( \frac{-v_D}{\sqrt{v_E^2+v_N^2}} \right)
+	\theta = tan^{-1} \left( \frac{v_u}{\sqrt{v_e^2+v_n^2}} \right)
 \end{equation}
 \begin{equation}
-	\phi = tan^{-1} \left( \frac{v_E}{v_N} \right)
+	\phi = tan^{-1} \left( \frac{v_n}{v_e} \right)
 \end{equation}
-where $\theta$ and $\phi$ is pitch and yaw angle respectively, whose accuracy depends on the accuracy of GNSS velocity. Another initial attitude determination method is introduced in \cite{Godha2006PerformanceEO} by accelerometer levelling, which uses knowledge of gravity sensed by each accelerometer, under static conditions. 
-
-\subsection{Short term GNSS/INS Fusion}
-The GNSS measurements and IMU pre-integration is used for a short term optimization with the factor graph model, which provides the state at each IMU sampling epoch, which is more accurate than the previous step. To achieve a fast initialization, the period may last for few seconds. In such a short time, the biases of IMU can not get a convergence, thus a further computation is needed. 
-
-The estimation and refinement of the gravity orientation is the essential step for current VIO system, due to the unknown initial attitude of the body. The refined gravity orientation is used to determine the attitude\cite{qinRobustInitializationMonocular2017}. As a result, the mixing bias error may lead to an incorrect gravity direction, which will result in attitude error. For most vehicle applications, a heavy dynamic of the body may only occurs along $z$ axis, resulting a large change just on yaw angle, which means the $z$ may always be approximately parallel to gravity vector. In this paper, given known axes of the IMU frame, one can correct the gravity directly with the optimized initial state. 
-
-\subsection{Vision Structure with Initial States}
-The initialization is based on loosely-coupled system, vision structure is needed to estimate a graph of camera poses and feature positions. Our method borrows idea from \cite{qinRobustInitializationMonocular2017}, which maintains several
-spacial-separate frames selected by enough parallax near the neighbor. We set rotation via Five-point method, to the chosen two frames which contain sufficient feature parallax. Differently from \cite{qinRobustInitializationMonocular2017}, the translation between such two frames is computed by IMU pre-integration retraction \cite{dellaertFactorGraphsRobot2017} based on GNSS/INS optimization:
+where $\theta$ and $\phi$ are pitch and yaw angle respectively, whose 
+accuracy depends on the accuracy of GNSS velocity. 
+Note that the calculation rule depends on the definition of the Euler 
+Angles.
+Another initial attitude determination method is introduced in 
+\cite{Godha2006PerformanceEO} by accelerometer leveling, which uses 
+knowledge of gravity sensed by each accelerometer, under static 
+conditions. 
+If the GNSS algorithms fail to provide velocities due to the lack of 
+Doppler measurements, one can use the position difference in $N$ frame 
+as 
 \begin{equation}
-	{_N}\boldsymbol{p}_{C} = {_N}\boldsymbol{p}_{B_{\star}} + \boldsymbol{R}_{NC}\cdot{_C}\boldsymbol{p}_{B}
-	\label{tranB-transC}
+	v_N = \frac{NED_i-NED_{i-1}}{t_i-t_{i-1}}
+\end{equation}
+
+\subsubsection{GNSS/INS Fusion}
+The estimation and refinement of the gravity orientation is the essential 
+step for the existing VIO systems, due to the unknown initial attitude of 
+the body. 
+The refined gravity orientation is used to determine the attitude
+\cite{qinRobustInitializationMonocular2017}. 
+As a result, the mixing bias error may lead to an incorrect gravity 
+direction, which will result in attitude error. 
+For most vehicle applications, a heavy dynamic of the body may only 
+occur along $z$ axis, resulting in a large change just on the yaw angle, 
+which means the $z$ may always be approximately parallel to the gravity 
+vector. 
+Note the measurement centers of the IMU and the GNSS antenna are not same, 
+which are related by lever arm, as shown in Fig. \ref{LeverArm}.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=8 cm]{Pic/LeverArm.pdf}
+	\caption{ Lever arm, the coordinate of GNSS antenna center under IMU frame.}
+	\label{LeverArm}
+\end{figure}
+
+\subsubsection{Vision Structure with Initial States}
+The initialization is based on a loosely-coupled system, vision structure 
+is needed to estimate a graph of camera poses and feature positions. 
+Our method borrows an idea from \cite{qinRobustInitializationMonocular2017}, 
+which maintains several spacial-separate frames selected by enough 
+parallax near the neighbor. 
+We set rotation via Five-point method, to the chosen two frames which 
+contain sufficient feature parallax. 
+Differently from \cite{qinRobustInitializationMonocular2017}, the 
+translation between such two frames is computed by IMU pre-integration 
+retraction \cite{dellaertFactorGraphsRobot2017} based on GNSS/INS 
+optimization, by the following transformation:
+\begin{equation}
+	\boldsymbol{R}_{WB} = \boldsymbol{R}_{WC}\boldsymbol{R}_{CB}
+	\label{RotB-RotC}
 \end{equation} 
-Such setting allows us to assign the structure a rough scale from GNSS/INS integration, whose metric measurements has a high accuracy. As the representation in \cite{qinRobustInitializationMonocular2017}, a less-than-$30\%$ scale error would initialize the system successfully. With the triangulation, Perspective-n-Point (PnP) estimation, and a global full bundle adjustment successively, we get all frame poses and feature positions under $N$ frame.
-
-\subsection{Gyroscope Bias Estimation}
-Given the known relative rotation between two consecutive frames, and the preintegrated IMU rotation, we can estimate the gyroscope bias. Utilizing the camera poses by vision structure procedure and assuming a negligible bias change, we compute a constant gyroscope bias $\boldsymbol{b}_g$ by minimizing the residual errors between the gyroscope integration and relative rotation from the vision: 
 \begin{equation}
-	\arg \min \limits_{\boldsymbol{b}_g} = \sum_{i=1}^{n-1}\Vert Log \left( (\Delta{\boldsymbol{R}_{i,i+1}}Exp(\boldsymbol{J}_{\Delta{\boldsymbol{R}}}^g\boldsymbol{b}_g))^T \boldsymbol{R}_{BN}^{i+1}\boldsymbol{R}_{NB}^{i}  \right) \Vert^2
+	{_W}\boldsymbol{p}_{B} = s{_W}\boldsymbol{p}_{C} + \boldsymbol{R}_{WC}\cdot{_C}\boldsymbol{p}_{B}
+	\label{tranB-transC}
+\end{equation}
+Such a setting allows us to assign the structure a rough scale from 
+GNSS/INS integration, whose metric measurements have high accuracy. 
+With the triangulation, Perspective-n-Point (PnP) estimation, and a 
+global full bundle adjustment successively, we get all frame poses and 
+feature positions under $N$ frame.
+
+\subsubsection{Gyroscope Bias Estimation}
+On basis of (\ref{RotB-RotC}), the relative rotation between two 
+consecutive frames and pre-integration rotation can be described as:
+\begin{equation}
+	\Delta{\boldsymbol{R}_{i,i+1}}Exp(\boldsymbol{J}_{\Delta{\boldsymbol{R}}}^g\boldsymbol{b}_g) = \boldsymbol{R}_{BC}\boldsymbol{R}_{CW}^{i}\boldsymbol{R}_{WC}^{i+1}\boldsymbol{R}_{CB}
+\end{equation}
+where $\boldsymbol{R}_{BC}$ is the extrinsic rotation calibrated in the 
+previous iteration.
+\begin{equation}
+	\mathop{\arg\min}_{\boldsymbol{b}_g} = \sum_{i=1}^{n-1}\Vert Log \left( (\Delta{\boldsymbol{R}_{i,i+1}}Exp(\boldsymbol{J}_{\Delta{\boldsymbol{R}}}^g\boldsymbol{b}_g))^T \boldsymbol{R}_{BW}^{i}\boldsymbol{R}_{WB}^{i+1}  \right) \Vert^2
 	\label{gyro-bias}
 \end{equation}
-where $n$ is the number of the keyframes, $\boldsymbol{R}_{NB}^{(\cdot)} = \boldsymbol{R}_{NC}^{(\cdot)}\boldsymbol{R}_{CB} $ is the body rotation by the operation of the computed vision structure rotation $\boldsymbol{R}_{NC}^{(\cdot)}$ and the calibration $\boldsymbol{R}_{CB}$. Solving the equation (\ref{gyro-bias}) by least-square with a zero bias seed, we can update the pre-integration $\Delta{\boldsymbol{R}_{ij}}$, $\Delta{\boldsymbol{v}_{ij}}$, $\Delta{\boldsymbol{p}_{ij}}$ with respect to the estimated $\boldsymbol{b}_g$. 
+where $n$ is the number of the keyframes, $\boldsymbol{R}_{WB}^{(\cdot)} = \boldsymbol{R}_{WC}^{(\cdot)}\boldsymbol{R}_{CB} $ is the body rotation by the operation of the computed vision structure rotation $\boldsymbol{R}_{WC}^{(\cdot)}$ and the calibration $\boldsymbol{R}_{CB}$. 
+Solving the equation (\ref{gyro-bias}) by least-square with a zero bias 
+seed, we can update the pre-integration $\Delta{\boldsymbol{R}_{ij}}$, 
+$\Delta{\boldsymbol{v}_{ij}}$, $\Delta{\boldsymbol{p}_{ij}}$ with 
+respect to the estimated $\boldsymbol{b}_g$. 
 
-\subsection{Accelerometer Bias Estimation}
-With the estimated gyroscope bias and initial states, we can substitute (\ref{tranB-transC}) to (\ref{prein-pos}), it follows:
-\begin{equation}
-	{_N}\boldsymbol{p}_C^{i+1} = {_N}\boldsymbol{p}_C^{i} + {_N}\boldsymbol{v}_{B}^{i}\Delta{t}_{i,i+1} + \frac{1}{2}{_N}\boldsymbol{g}\Delta{t}_{i,i+1}^2 + (\boldsymbol{R}_{NC}^i-\boldsymbol{R}_{NC}^{i+1}){_C}\boldsymbol{p}_B +(\boldsymbol{R}_{NB}^i\Delta{p}_{i,i+1}+\boldsymbol{J}_{\Delta\boldsymbol{p}}^{\boldsymbol{b}_a}\delta\boldsymbol{b}_a^i)
-	\label{prein-pos-C}
-\end{equation}
-Our goal is to compute the accelerometer bias by solving a linear system of equations. One natural way to perform the computation is to substitute the initial velocities by GNSS/INS fusion into (\ref{prein-pos-C}) .To avoid noises of $N$ velocities, and reduce complexity, we consider two relations (\ref{prein-pos-C}) between three consecutive keyframes and utilize velocity relation in (\ref{prein-vel}), resulting in the following expression: 
-\begin{equation}
-	\boldsymbol{A}(i) \cdot \boldsymbol{b}_a = \boldsymbol{B}(i)
-	\label{bias-equt}
-\end{equation}
-Writing keyframes $i$, $i + 1$, $i + 2$ as 1,2,3 for clarity of notation, we have:
+\subsubsection{Estimation of Rough Gravity and Scale}
+With the initial poses, and utilizing the estimated gyroscope bias in 
+(\ref{gyro-bias}) to modify $\Delta{p}_{i,i+1}$, substitute 
+(\ref{tranB-transC}) into (\ref{prein-pos}), it follows:
 \begin{equation}
 	\begin{aligned}
-		\boldsymbol{A}(i) = & -\boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB} \boldsymbol{J}_{\Delta\boldsymbol{p}_{12}}^{\boldsymbol{b}_a} \Delta{t}_{23} + \boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB} \boldsymbol{J}_{\Delta\boldsymbol{v}_{12}}^{\boldsymbol{b}_a} \Delta{t}_{12}\Delta{t}_{23} + \boldsymbol{R}_{NC}^2\boldsymbol{R}_{CB} \boldsymbol{J}_{\Delta\boldsymbol{p}_{23}}^{\boldsymbol{b}_a} \Delta{t}_{12} \\
-		\boldsymbol{B}(i) = & (\boldsymbol{R}_{NC}^3-\boldsymbol{R}_{NC}^2)\boldsymbol{t}_{CB}\Delta{t}_{12} + (\boldsymbol{R}_{NC}^1-\boldsymbol{R}_{NC}^2)\boldsymbol{t}_{CB}\Delta{t}_{23}\\
-		& +\boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB}\Delta\boldsymbol{p}_{12}\Delta{t}_{23} - \boldsymbol{R}_{NC}^2\boldsymbol{R}_{CB}\Delta\boldsymbol{p}_{23}\Delta{t}_{12} -\boldsymbol{R}_{NC}^1\boldsymbol{R}_{CB}\Delta\boldsymbol{v}_{12}\Delta{t}_{12}\Delta{t}_{23}\\
-		&-\frac{1}{2}{_N}\boldsymbol{g}\Delta{t}_{12}\Delta{t}_{23}(\Delta{t}_{12}+\Delta{t}_{23}) \\
-		&-({_N}\boldsymbol{p}_C^2-{_N}\boldsymbol{p}_C^1)\Delta{t}_{23}-({_N}\boldsymbol{p}_C^2-{_N}\boldsymbol{p}_C^3)\Delta{t}_{12}
+		s{_W}\boldsymbol{p}_C^{i+1} = & s{_W}\boldsymbol{p}_C^{i} + {_W}\boldsymbol{v}_B^i\Delta{t}_{i,i+1}
+		+ \frac{1}{2}{_W}\boldsymbol{g}\Delta{t}_{i,i+1}^2 + \\ & (\boldsymbol{R}_{WC}^i
+		-\boldsymbol{R}_{WC}^{i+1}){_C}\boldsymbol{p}_B + 
+		\boldsymbol{R}_{WB}^i(\Delta{p}_{i,i+1} +\boldsymbol{J}_{\Delta\boldsymbol{p}}^{\boldsymbol{b}_a}\delta\boldsymbol{b}_a^i)
+	\end{aligned}
+	\label{prein-pos-C}
+\end{equation}
+Since the accelerometer bias and gravity are hard to distinguish, a rough estimation 
+of the visual scale and gravity is conducted firstly.
+The goal to compute the gravity and the scale needs solving a 
+linear system of equations. 
+To avoid noises of $N$ velocities, and reduce complexity, we consider 
+two relations (\ref{prein-pos-C}) between three consecutive keyframes 
+and utilize velocity relation in (\ref{prein-vel}), resulting in the 
+following expression: 
+\begin{equation}
+	\left[\begin{matrix} \boldsymbol{A}_1(i) & \boldsymbol{A}_2(i)  \end{matrix}\right] \cdot  
+	\left[\begin{matrix} s \\ {_W}\boldsymbol{g}^{\star}  \end{matrix}\right] = \boldsymbol{B}(i)
+	\label{VIORough}
+\end{equation}
+Writing keyframes $i$, $i + 1$, $i + 2$ as 1,2,3 for clarity of 
+notation, we have:
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{A}_1(i) = & ({_W}\boldsymbol{p}_C^2-{_W}\boldsymbol{p}_C^3)\Delta{t}_{12}-({_W}\boldsymbol{p}_C^1-{_W}\boldsymbol{p}_C^2)\Delta{t}_{23}                                                                             \\
+		\boldsymbol{A}_2(i) = & \frac{1}{2} \boldsymbol{I}_{3\times 3} \Delta{t_{12}}\Delta{t_{23}}(\Delta{t_{12}} + \Delta{t_{23}})                                                                                                    \\
+		\boldsymbol{B}(i) =   & \boldsymbol{R}_{WB}^1\Delta\boldsymbol{p}_{12}\Delta{t}_{23} -\boldsymbol{R}_{WB}^1\Delta\boldsymbol{v}_{12}\Delta{t}_{12}\Delta{t}_{23} - \boldsymbol{R}_{WB}^2\Delta\boldsymbol{p}_{23}\Delta{t}_{12} \\
+		                      & +(\boldsymbol{R}_{WC}^{1}-\boldsymbol{R}_{WC}^{2}) \boldsymbol{p}_{CB}\Delta{t_{23}} - (\boldsymbol{R}_{WC}^{2}-\boldsymbol{R}_{WC}^{3}) \boldsymbol{p}_{CB}\Delta{t_{12}}                              \\
+		                      & +({_W}\boldsymbol{p}_C^1-{_W}\boldsymbol{p}_C^2)\Delta{t}_{23}-({_W}\boldsymbol{p}_C^2-{_W}\boldsymbol{p}_C^3)\Delta{t}_{12}                                                                            
+	\end{aligned}
+	\label{VIORoughEq}
+\end{equation}
+Stacking all relations between three consecutive keyframes (\ref{VIORough}), we 
+form an overdetermined linear system of equations $\boldsymbol{A}_{3(n-2)\times 3}\boldsymbol{b}_{3\times1} = \boldsymbol{B}_{3(n-2)\times1}$, 
+which can be solved via least-square. 
+Based on the scale seed, the SFM was constructed near the real world.
+Therefore, the scale result via the estimation should be approximately 1.0.
+
+\subsubsection{Accelerometer Bias Estimation, and Refinement of Gravity and Scale}
+Now the accelerometer bias can be calculated, together with the refinement of 
+gravity and scale.
+Considering the gravity in the navigation reference $\boldsymbol{G}_{N} = \left[\begin{matrix} 0 & 0 & 9.81 \end{matrix}\right]^T$,
+with the rough estimated gravity ${_W}\boldsymbol{g}^{\star}$, we can calculate the 
+rotation between navigation frame and the world frame:
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{R}_{WN} =      & Exp(\tilde{\boldsymbol{v}}\theta)                                                                                                                                                                                                                                       \\
+		\tilde{\boldsymbol{v}} =   & \frac{_N\boldsymbol{\tilde{g}\times {_W\boldsymbol{\tilde{g}}}}}{\| _N\boldsymbol{\tilde{g}\times{_W\boldsymbol{\tilde{g}}}}\|}, \theta = atan2(\|_N\boldsymbol{\tilde{g}\times{_W\boldsymbol{\tilde{g}}}}\|,{_N\boldsymbol{\tilde{g}}\cdot{_W\boldsymbol{\tilde{g}}}}) \\
+		_N\boldsymbol{\tilde{g}} = & (0,0,1.0),{_W\boldsymbol{\tilde{g}}} = \boldsymbol{g}_W^{\star}/\| \boldsymbol{g}_W^{\star}\|                                                                                                                                                                           
 	\end{aligned}
 \end{equation}
-Stacking all relations between three consecutive keyframes (\ref{bias-equt}) we form an overdetermined linear system of equations $\boldsymbol{A}_{3(n-2)\times 3}\boldsymbol{b}_{3\times1} = \boldsymbol{B}_{3(n-2)\times1}$ which can be solved via least-square. We can calculate the condition number to check whether the problem is well-conditioned.
+Rather than estimating the gravity vector directly, gravity is optimized with a 
+perturbation $\delta\boldsymbol{\theta}$ on $\boldsymbol{R}_{WN}$, similar to 
+\cite{mur-artalVisualInertialMonocularSLAM2017a}:
+\begin{equation}
+	\begin{aligned}
+		_W\boldsymbol{g} = & \boldsymbol{R}_{WN}Exp(\delta\theta)\cdot {_N\boldsymbol{G}} \approx \boldsymbol{R}_{WN} \cdot { _N\boldsymbol{G}} - \boldsymbol{R}_{WN}\cdot [{ _N\boldsymbol{G}} ]_{\times} \delta\boldsymbol{\theta} \\
+		\delta\boldsymbol{\theta} = & [\begin{matrix} \delta\boldsymbol{\theta}_{xy}^T & 0\end{matrix}]^T ,\delta\boldsymbol{\theta}_{xy} = [\begin{matrix} \delta{\theta}_{x} & \delta{\theta}_{y}\end{matrix}]^T \\
+		_N\boldsymbol{\tilde{G}} = & (0,0,9.81)^T    
+	\end{aligned}
+	\label{gravity expression}
+\end{equation}
+Substituting \ref{gravity expression} into \ref{prein-pos-C}, we have:
+\begin{equation}
+	\left[\begin{matrix} \boldsymbol{C}_1(i) & \boldsymbol{C}_2(i) & \boldsymbol{C}_3(i) \end{matrix}\right] \cdot  \left[\begin{matrix} s \\ \delta\boldsymbol{\theta}_{xy} \\ \boldsymbol{b}_a \end{matrix}\right] = \boldsymbol{D}(i)
+	\label{VIORefine}
+\end{equation}
+where $\boldsymbol{C}_1(i)$ remains the same as $\boldsymbol{A}_1(i)$ in \ref{VIORoughEq}, and 
+$\boldsymbol{C}_2(i)$,$\boldsymbol{C}_3(i)$, and $\boldsymbol{D}(i)$ are 
+calculated as:
+\begin{equation}
+	\begin{aligned}
+		\boldsymbol{C}_2(i) = & \left[ -\frac{1}{2} \boldsymbol{R}_{WN} [{ _N\boldsymbol{G}} ]_{\times} \Delta{t_{12}}\Delta{t_{23}}(\Delta{t_{12}} + \Delta{t_{23}}) \right]_{1:2}                                                                                                                                                                    \\
+		\boldsymbol{C}_3(i) = & \boldsymbol{R}_{WB}^2\boldsymbol{J}_{\Delta\boldsymbol{p}_{23}}^{\boldsymbol{b}_a} \Delta{t}_{12}-\boldsymbol{R}_{WB}^1 \boldsymbol{J}_{\Delta\boldsymbol{p}_{12}}^{\boldsymbol{b}_a} \Delta{t}_{23} + \boldsymbol{R}_{WB}^1\boldsymbol{J}_{\Delta\boldsymbol{v}_{12}}^{\boldsymbol{b}_a} \Delta{t}_{12}\Delta{t}_{23} \\
+		\boldsymbol{D}(i) =   & \boldsymbol{R}_{WB}^1\Delta\boldsymbol{p}_{12}\Delta{t}_{23} -\boldsymbol{R}_{WB}^1\Delta\boldsymbol{v}_{12}\Delta{t}_{12}\Delta{t}_{23} - \boldsymbol{R}_{WB}^2\Delta\boldsymbol{p}_{23}\Delta{t}_{12}                                                                                                                \\
+		                      & -\frac{1}{2}{_W}\boldsymbol{R}_{WN}\cdot { _N\boldsymbol{G}}  \Delta{t_{12}}\Delta{t_{23}}(\Delta{t_{12}} + \Delta{t_{23}})                                                                                                                                                                                            \\
+		                      & +({_W}\boldsymbol{p}_C^1-{_W}\boldsymbol{p}_C^2)\Delta{t}_{23}-({_W}\boldsymbol{p}_C^2-{_W}\boldsymbol{p}_C^3)\Delta{t}_{12}                                                                                                                                                                                           
+	\end{aligned}
+\end{equation}
 
-\subsection{Overall Optimization}
-With the initial poses, velocities, feature positions, estimated biases, we can perform a overall optimization with all states. 
+Criteria are necessary for the termination when all the parameters 
+are converged.
+Since gyroscope bias and scale usually converge fast to stable values, 
+more attention should be paid to gravity, accelerometer bias.
+We set an empirical threshold 0.02 $m/s^2$ for the std(standard deviation) of 
+gravity and accelerometer bias estimated by the last 10 consecutive keyframes, 
+to determine their convergence.
+Another widely-used criterion is condition number, which can suggest 
+whether the equation is well-conditioned.
+However, no quantitative value of such indicator is set, since an 
+absolute threshold is not reliable enough\cite{mur-artalVisualInertialMonocularSLAM2017a}.
 
 
-\section{Experiments}
-
-
-
-Bulleted lists look like this:
-\begin{itemize}[leftmargin=*,labelsep=5.8mm]
-\item	First bullet
-\item	Second bullet
-\item	Third bullet
-\end{itemize}
-
-Numbered lists can be added as follows:
-\begin{enumerate}[leftmargin=*,labelsep=4.9mm]
-\item	First item 
-\item	Second item
-\item	Third item
-\end{enumerate}
-
-The text continues here.
-
-\subsection{Figures, Tables and Schemes}
-
-All figures and tables should be cited in the main text as Figure 1, Table 1, etc.
+\subsection{GNSS-VIO Initialization}
+\begin{figure}[H]
+	\centering
+	\includegraphics[scale=0.5]{Pic/Tgv.pdf}
+	\caption{Transformation between VIO and ground truth poses.}
+	\label{Transformation}
+\end{figure} 
+As described earlier, to fuse GNSS measurements $\boldsymbol{p}_{N}$ 
+and VIO position estimation $\boldsymbol{p}_{W}$, the transformation 
+or alignment parameters to relate them:
+\begin{equation}
+	\boldsymbol{p}_N = \boldsymbol{T}_{NW} \oplus  \boldsymbol{p}_{W}, \boldsymbol{T} \in Sim(3)
+\end{equation}
+where $\boldsymbol{T}_{NW}$ consists of \{$s$, $\boldsymbol{R}_{NW}$, 
+$_N\boldsymbol{t}_{W}$\}.
+Horn alignment \cite{hornClosedformSolutionAbsolute1987} is a widely-
+used method to calculate $\boldsymbol{T}_{NW}$, with a set of accurate 
+ground truth.
+However, it is difficult to obtain true trajectories in some sheltered 
+or GNSS-denied scenarios, and the position results are estimated with 
+different accuracy.
+To apply the GNSS noise model, we perform a non-linear optimization to 
+compute $\boldsymbol{T}_{NW}$, with $n$ point pairs:
+\begin{equation}
+	\mathop{\arg\min}_{s,\boldsymbol{R}_{NW}, _N\boldsymbol{t}_{W}} = 
+	\sum_{i=1}^{n}\Vert \boldsymbol{z} - f(s,\boldsymbol{R}_{NW}, _N\boldsymbol{t}_{W}) 
+	\Vert^2_{\boldsymbol{z}_{noise}}
+\end{equation}
+We can transform the estimated VIO positions to a global frame with 
+$\boldsymbol{T}_{NW}$, and evaluate scale error as well.
+The procedure is demonstrated in Fig. \ref{Transformation}.
 
 \begin{figure}[H]
-\centering
-\includegraphics[width=2 cm]{Definitions/logo-mdpi}
-\caption{This is a figure, Schemes follow the same formatting. If there are multiple panels, they should be listed as: (\textbf{a}) Description of what is contained in the first panel. (\textbf{b}) Description of what is contained in the second panel. Figures should be placed in the main text near to the first time they are cited. A caption on a single line should be centered.}
-\end{figure}   
- 
-Text
+	\centering
+	\includegraphics[scale=0.5]{Pic/Procedure.pdf}
+	\caption{Procedure of the initialization.}
+	\label{Procedure}
+\end{figure} 
 
-Text
+\section{Experiments}
+\label{Experiments}
+\subsection{Implementation details}
+
+Our system is equipped with a Basler aca1300-60gm monocular grayscale 
+camera that captures 1280$\times$1024 images at 20Hz, and a GNSS/INS 
+integrated system M40, which consists of a NovAtel multi-constellation 
+GNSS card that works at 1Hz and a ADIS-16460 IMU runs at 200Hz.
+All sensors are rigidly mounted on a plate fixed on the roof of a sport utility
+vehicle(SUV), and we regard IMU aligned with the vehicle frame.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=12 cm]{Pic/Platform.png}
+	\caption{Test platform.}
+	\label{Plateform}
+\end{figure}
+
+In our system, all the time systems are aligned via hard-ware trigger, 
+generated by the GNSS card, which is fed into the camera and IMU. 
+The extrinsic rotation and translation between camera and IMU are 
+calibrated by the state-of-the-art software Kalibr\cite{rehderExtendingKalibrCalibrating2016}.
+The position of GNSS antenna center under IMU frame, also known as the  
+lever arm, is often measured with a metric ruler.
+
 
 \begin{table}[H]
-\caption{This is a table caption. Tables should be placed in the main text near to the first time they are cited.}
-\centering
-%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
-\begin{tabular}{ccc}
-\toprule
-\textbf{Title 1}	& \textbf{Title 2}	& \textbf{Title 3}\\
-\midrule
-entry 1		& data			& data\\
-entry 2		& data			& data\\
-\bottomrule
-\end{tabular}
+	\caption{Technical Parameters of ADIS-16460.}
+	\centering
+	%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
+	\begin{tabular}{ccc}
+		\toprule
+		t1             & Accelerometer      & Gyroscope               \\
+		\midrule
+		Bias stability & 400 mGal           & $24 ^{\circ}/h$         \\
+		Random Walk    & $0.4 m/s/\sqrt{h}$ & $0.2 ^{\circ}/\sqrt{h}$ \\
+		\bottomrule
+	\end{tabular}
+	\label{ADIS}
 \end{table}
 
-Text
+To perform a comprehensive evaluation for the initialization, six tests 
+were implemented on the campus of Wuhan University.
+Since built under a hill, the roads of the campus are rarely plain or 
+straight, hence the car could perform lots of dynamic motion.
+Some parts of the area are full of trees, where GNSS signal may 
+be denied, while the objects and features can be easily detected. 
+In order to avoid long-term GNSS signal blocking, a part of the open-sky 
+environment in the campus is selected to conduct all tests.
+Thus, some segments of the trajectories are overlapped. 
+A short summary of the scenarios is given in Table \ref{InitScenes}:
+\begin{table}[H]
+	\caption{Initialization scenarios.}
+	\centering
+	%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
+	\begin{tabular}{cccccccc}
+		\toprule
+		               & Test1         & Test2       & Test3           & Test4    & Test5                 & Test6         \\
+		\midrule
+		Obstructions   & lots of trees & a few trees & a few buildings & open-sky & open-sky              & a few trees   \\
+		Illumination   & dim           & bright      & dim             & bright   & bright                & bright        \\
+		Motion pattern & curve         & curve       & curve           & curve    & straight line + curve & straight line \\
+		Speed(km/h)    & 8.1-11.1      & 6.1-8.9     & 5.5-6.2         & 9.0-15.8 & 14.1-16.3             & 15.0-19.9     \\
+		\bottomrule
+	\end{tabular}
+	\label{InitScenes}
+\end{table}
 
-Text
+The RTK trajectories of the tests are illustrated in Fig. \ref{Trajs},
+different types of scenarios are selected for each test, which are 
+placed on the corresponding map. 
+\begin{figure}[H]
+	\centering
+	\subfigure[Test1]{\includegraphics[width=5.1 cm]{Pic/Trajs/t1.png}}
+	\subfigure[Test2]{\includegraphics[width=5.1 cm]{Pic/Trajs/t1a.png}}
+	\subfigure[Test3]{\includegraphics[width=5.1 cm]{Pic/Trajs/t2.png}}\\
+	\subfigure[Test4]{\includegraphics[width=5.1 cm]{Pic/Trajs/t2a.png}}
+	\subfigure[Test5]{\includegraphics[width=5.1 cm]{Pic/Trajs/t3_e.png}}
+	\subfigure[Test6]{\includegraphics[width=5.1 cm]{Pic/Trajs/t3a.png}}
+	\caption{ GNSS RTK Trajectories (Google Earth) and Scenarios (thumbnail) of the Tests.}
+	\label{Trajs}
+\end{figure}
+
+
+We focus on the initial navigation states by GNSS, and the estimated VIO 
+parameters including gyroscope bias, accelerometer bias, gravity, visual 
+scale, and the optimized GNSS-VIO transformation.
+To evaluate the initial navigation states, the GNSS/INS integrated 
+navigation system is carried out to be taken as the reference values.
+The Vinsual-Inertial parameters estimation will be compared with the 
+state-of-the-art VIO algorithm VI ORB-SLAM2\cite{mur-artalVisualInertialMonocularSLAM2017a}.
+At last, the transformation parameter between GNSS and VIO 
+trajectories is calculated by non-linear optimization, to align the 
+two sets of poses, and to assess the scale error.
+
+\section{Results}
+\subsection{Initial Altitude Estimation by GNSS}
+GNSS velocities, which are provided by the RTK algorithm, can be 
+used to estimate pitch and yaw. 
+Table \ref{GNSSInitStates} shows the error statistics of all the six 
+test datasets.
+We can see that the error of pitch and yaw is about 1-2 deg.
+The yaw angle has a smaller error than the pitch angle, this is because only 
+the pitch variable involves $v_d$, whose relative noise is often larger 
+than $v_e$ and $v_n$.
+The GNSS-denied environments (Test1, Test3, Test4, note this is about 
+the whole trajectories, thus it can be different from the 
+initialization scenarios in Table \ref{InitScenes}) reduced the 
+accuracy of GNSS velocities, and thus of the pitch and yaw.
+\begin{table}[H]
+	\caption{Statistics of pitch, yaw error(deg).}
+	\centering
+	%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
+	\begin{tabular}{ccccccccc}
+		\toprule
+		                       &     & Test1 & Test2 & Test3 & Test4 & Test5 & Test6 & MEAN  \\
+		\midrule
+		\multirow{2}{*}{Pitch} & RMS & 2.127 & 1.663 & 2.185 & 2.048 & 1.773 & 1.897 & 1.949 \\
+		                       & STD & 1.896 & 1.310 & 1.720 & 1.863 & 1.671 & 1.740 & 1.700 \\
+		\midrule
+		\multirow{2}{*}{Yaw}   & RMS & 1.667 & 1.626 & 1.566 & 1.329 & 1.753 & 1.633 & 1.596 \\
+		                       & STD & 1.397 & 1.101 & 0.957 & 0.936 & 1.351 & 1.312 & 1.176 \\
+		\bottomrule
+	\end{tabular}
+	\label{GNSSInitStates}
+\end{table}
+
+
+\subsection{The Performance of Visual-Inertial Parameters Estimation}
+
+For the performance analysis of the estimation of  IMU bias, gravity, and 
+camera scale, all the tests are expected to evaluate the proposed 
+algorithm.
+The time varied characteristic curves of the six tests' Visual-Inertial 
+parameters by our method are shown in Fig. \ref{VIOParams}.
+It can be seen that all the variables by our estimation start to 
+converge between 6 and 8 seconds on Test1-Test4, while it 
+takes a longer time on Test5 and Test6. 
+This is greatly because the parallax between consecutive frames 
+changes slowly on a straight line, thus enough parallax for 
+keyframe selection needs a larger time duration than other motion 
+patterns, despite a higher speed.
+And Test6 takes quite a long time than Test5, since that the straight 
+line in initialization of Test6 is longer than Test5.
+Comparing with Test2 and Test4, we can see that the initialization periods 
+of Test1 and Test3 are slightly longer, which may because Test1 and Test3 
+recorded the datasets in worse illumination scenarios.
+
+With respect to each variable, we can see that the curves of 
+gyroscope bias can achieve stable values in a very short time, 
+while accelerometer bias and gravity suffer oscillation in the 
+beginning, for the difficulty of distinguishing them.
+Comparing with Test1, the variables especially the accelerometer 
+bias and gravity change dramatically in about 2 second on Test2, Test3, 
+and Test4.
+It might also be because the bright scene can construct a better 
+quality of the SLAM model.
+The visual scale variable of our approach converge faster to a stable 
+value in Test2, Test3, Test4, and Test5, comparing with Test1 and Test6.
+The possible reason for such a phenomenon may be due to dim brightness 
+and straight line motion as well.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1/bg.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1a/bg.eps} \\
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1/ba.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1a/ba.eps} \\
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1/g_ref.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1a/g_ref.eps} \\
+	\subfigure[Test1]{\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1/s.eps}}
+	\subfigure[Test2]{\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t1a/s.eps}} \\
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2/bg.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2a/bg.eps} \\
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2/ba.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2a/ba.eps} \\
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2/g_ref.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2a/g_ref.eps} \\
+	\subfigure[Test3]{\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2/s.eps}}
+	\subfigure[Test4]{\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t2a/s.eps}} \\
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3_e/bg.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3a/bg.eps} \\
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3_e/ba.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3a/ba.eps} \\
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3_e/g_ref.eps}
+	\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3a/g_ref.eps} \\
+	\subfigure[Test5]{\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3_e/s.eps}}
+	\subfigure[Test6]{\includegraphics[width=0.46\textwidth]{Pic/VIOParams/VIG/t3a/s.eps}} \\
+	\caption{Visual-Inertial parameters estimation results.}
+	\label{VIOParams}
+\end{figure}
+
+Since our method and VI ORB-SLAM2, a state-of-the-art VIO algorithm, 
+perform similar VIO estimation procedures, a comparison is conducted 
+to analyze the consistency.
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2/bg.eps}
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2/bg.eps} \\
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2/ba.eps}
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2/ba.eps} \\
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2/g_ref.eps}
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2/g_ref.eps} \\
+	\subfigure[Ours on Test3]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2/s.eps}}
+	\subfigure[VI ORB-SLAM2 on Test3]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2/s.eps}} \\
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2a/bg.eps}
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2a/bg.eps} \\
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2a/ba.eps}
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2a/ba.eps} \\
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2a/g_ref.eps}
+	\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2a/g_ref.eps} \\
+	\subfigure[Ours on Test4]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2a/s.eps}}
+	\subfigure[VI ORB-SLAM2 on Test4]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2a/s.eps}} \\
+	\caption{The comparison of Our method with VI ORB-SLAM2 on Test3 and Test4.}
+	\label{VIOParam4}
+\end{figure}
+
+
+Fig. \ref{VIOParam4} shows comparison of Visual-Inertial parameters 
+results of the proposed method and VI ORB-SLAM2 on Test3 and Test4. 
+It is observed that our method beats VI ORB-SLAM2 on time cost of 
+convergence.
+This is greatly because of the better inlier selection in our method,
+since the initial states, especially the attitude, and a coarse scale 
+are fed to VIO estimation.
+Therefore, the VIO structure in our scheme is very close to real world, 
+and distant points exceed the depth threshold (50 m of in this paper) could 
+be treated as outliers for elimination.
+
+The gyroscope bias of our method are very close to VI ORB-SLAM2, 
+while the time-varied curves of ours are more stable than VI ORB-SLAM2.
+This phenomenon confirms that the SFM optimization outperforms VI ORB-SLAM2, 
+since the gyroscope bias estimation involves only SFM quality and 
+gyroscope bias stability. 
+However, such consistency does not apply to accelerometer bias and 
+gravity, for the coupling of such two variables.
+Since the motion of a car is almost on a plane, at least two axes of  
+IMU may not be excited enough.
+As a result, the accelerometer bias and gravity estimation of both 
+methods could be inaccurate.
+The scale variable of our estimation is consistent to VI ORB-SLAM2, on 
+the changing trend.
+Note that a scale seed is fed to VIO estimation in our method, the 
+scale values of the two methods might be different.
+
+\begin{figure}[H]
+	\centering
+	\subfigure[Ours on Test3]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2/cond.eps}}
+	\subfigure[VI ORB-SLAM2 on Test3]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2/cond.eps}} 
+\end{figure}
+\begin{figure}[H]
+	\centering
+	\subfigure[Ours on Test4]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/VIG/t2a/cond.eps}}
+	\subfigure[VI ORB-SLAM2 on Test4]{\includegraphics[width=0.43\textwidth]{Pic/VIOParams/ORB/t2a/cond.eps}} \\
+	\caption{The Condition Number of Our method with VI ORB-SLAM2 on Test3 and Test4.}
+	\label{VIOCond}
+\end{figure}
+The condition number can be used as another indicator of the performance,  
+which is shown in Fig. \ref{VIOCond}.
+In general, it takes some time for the condition number to drop to a 
+small value, to get a well-conditiond problem.
+This is because the sensors need a motion to make all variables 
+observable \cite{mur-artalVisualInertialMonocularSLAM2017a}.
+The condition number may be different from per test, which means we could 
+not set an absolute threshold for it.
+Comparing with VI ORB-SLAM2, it can be found that the curves of the 
+condition number in our system are smoother, and the converged value 
+is smaller. 
+
+
+\subsection{GNSS-VIO Alignment}
+
+Applying the scale to keyframe translations and feature positions in 
+Visual-Inertial estimation, we can calculate the keyframe poses and 
+points very close to the real world. 
+To measure the scale error, we optimize the transformation parameters 
+between the initialization and GNSS/INS fusion, which is taken as the 
+ground truth.
+To compare, we run the same exhaustive tests with VI ORB-SLAM2 and 
+another state-of-the-art VINS-Mono\cite{qinVINSMonoRobustVersatile2017}.
+As the initialization of VINS-Mono use only a limited count of keyframes, 
+we set the window size 20 to balance the keyframe quantity and 
+the co-visual field of the whole window.
+Hence, some initialization tests may fail to get the correct values for 
+the insufficient number of keyframes.
+
+The results are summarized in Table \ref{align}.
+It can be seen that scale error of all tests by the proposed initialization 
+is within 10\%, while VI ORB-SLAM2 and VINS-Mono has some errors larger than 
+10\% or higher.
+The proposed method achieves the best scale estimation on most tests.
+Our method outperforms VI ORB-SLAM2 and VINS-Mono in the accuracy of alignment error on
+each test.
+Most alignment error of our method are within a decimeter level, while that of 
+VI ORB-SLAM2 and VINS-Mono can be several meters.
+
+\begin{table}[H]
+	\caption{The Comparison of Our method with VI ORB-SLAM2 and 
+		VINS-Mono on scale error and alignment error. 
+	The estimation of VINS-Mono on Test2 failed to get a correct scale value.}
+	\centering
+	%% \tablesize{} %% You can specify the fontsize here, e.g., \tablesize{\footnotesize}. If commented out \small will be used.
+	\begin{tabular}{cccccccc}
+		\toprule
+		                              &                    & Test1           & Test2           & Test3           & Test4           & Test5           & Test6           \\
+		\midrule
+		\multirow{2}{*}{Ours}         & scale error        & 8.24\%          & \textbf{0.08\%} & \textbf{5.19\%} & 6.18\%          & \textbf{1.32\%} & \textbf{0.18\%} \\
+		\cline{2-8}
+		                              & alignment error(m) & 0.05            & 0.06            & 0.04            & 0.09            & 0.03            & 0.26            \\
+		\midrule
+		\multirow{2}{*}{VI ORB-SLAM2} & scale error        & \textbf{1.13\%} & 6.91\%          & 46\%            & \textbf{1.50\%} & 5.16\%          & 2.8\%           \\
+		\cline{2-8}
+		                              & alignment error(m) & 1.40            & 0.52            & 2.27            & 0.51            & 0.97            & 0.76            \\
+		\midrule
+		\multirow{2}{*}{VINS-Mono}    & scale error        & 85.9\%          & -               & 31\%            & 20.4\%          & 10.03\%         & 7.4\%           \\
+		\cline{2-8}
+		                              & alignment error(m) & 3.21            & -               & 1.06            & 2.35            & 1.06            & 1.37            \\
+		\bottomrule
+	\end{tabular}
+	\label{align}
+\end{table}
 
 %\begin{listing}[H]
 %\caption{Title of the listing}
@@ -407,55 +1176,44 @@ Text
 %\rule{\textwidth}{1pt}
 %\end{listing}
 
-
-\subsection{Formatting of Mathematical Components}
-
-This is an example of an equation:
-
-\begin{equation}
-a + b = c
-\end{equation}
-%% If the documentclass option "submit" is chosen, please insert a blank line before and after any math environment (equation and eqnarray environments). This ensures correct linenumbering. The blank line should be removed when the documentclass option is changed to "accept" because the text following an equation should not be a new paragraph. 
-
-Please punctuate equations as regular text. Theorem-type environments (including propositions, lemmas, corollaries etc.) can be formatted as follows:
-%% Example of a theorem:
-\begin{Theorem}
-Example text of a theorem.
-\end{Theorem}
-
-The text continues here. Proofs must be formatted as follows:
-
-%% Example of a proof:
-\begin{proof}[Proof of Theorem 1]
-Text of the proof. Note that the phrase `of Theorem 1' is optional if it is clear which theorem is being referred to.
-\end{proof}
-The text continues here.
-
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Discussion}
-
-Authors should discuss the results and how they can be interpreted in perspective of previous studies and of the working hypotheses. The findings and their implications should be discussed in the broadest context possible. Future research directions may also be highlighted.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Materials and Methods}
-
-Materials and Methods should be described with sufficient details to allow others to replicate and build on published results. Please note that publication of your manuscript implicates that you must make all materials, data, computer code, and protocols associated with the publication available to readers. Please disclose at the submission stage any restrictions on the availability of materials or information. New methods and protocols should be described in detail while well-established methods can be briefly described and appropriately cited.
-
-Research manuscripts reporting large datasets that are deposited in a publicly available database should specify where the data have been deposited and provide the relevant accession numbers. If the accession numbers have not yet been obtained at the time of submission, please state that they will be provided during review. They must be provided prior to publication.
-
-Interventionary studies involving animals or humans, and other studies require ethical approval must list the authority that provided approval and the corresponding ethical approval code. 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
+\label{Conclusions}
+In this study, a fast and accurate initialization algorithm for the 
+integration of Mono Vision, INS and GNSS is proposed.
+We focus on vehicle scene, whose motion pattern is different from the 
+wide-used Euroc dataset\cite{burriEuRoCMicroAerial2016a} recorded by 
+Micro Aerial Vehicle(MAV).
+Firstly, the GNSS RTK measurements are used to estimate the roughly 
+initial navigation state, especially the attitude, which can provide
+a coarse direction of the gravity. 
+However, most state-of-the-art algorithms set an arbitrary initial 
+pose for lacking of additional observations.
+Secondly, with a roughly determined pose for SFM structure, we can estimate 
+the initial scale.
+Fed with such a scale seed, the SFM algorithm achieves a structure which 
+is very close to real world.
+Thus, we can set a depth threshold for the outlier elimination.
+At the same time, GNSS/INS fusion is performed to provide trajectories of 
+ground truth.
+Once the Visual-Inertial parameters converged, the transformation between 
+the estimated keyframe poses and the ground truth is estimated to align the 
+two trajectories, and calculate the scale error as well.
+We verify the effectiveness on six tests with various scenarios.
+The results show that he Visual-Inertial parameters converge in <9 seconds 
+in this study.
+It can be found that good brightness and non-straight line motion could 
+improve the performance of initialization.
+The comparison shows that the proposed methods outperforms the 
+VI ORB-SLAM2 and VINS-Mono on both gravity, accelerometer bias convergence 
+and scale estimation.
 
-This section is not mandatory, but can be added to the manuscript if the discussion is unusually long or complex.
+The proposed method is still a kind of joint initialization of vision 
+and IMU, which contains some steps based on non-linear optimization, which 
+may be sensitive to the accuracy of the initial values. 
+As a future work, we will try to split the system in an up-to-scale visual 
+problem, followed by and inertial-only optimization phase.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Patents}
-This section is not mandatory, but may be added if there are patents resulting from the work reported in this manuscript.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \vspace{6pt} 
@@ -475,34 +1233,9 @@ This section is not mandatory, but may be added if there are patents resulting f
 \funding{Please add: ``This research received no external funding'' or ``This research was funded by NAME OF FUNDER grant number XXX.'' and  and ``The APC was funded by XXX''. Check carefully that the details given are accurate and use the standard spelling of funding agency names at \url{https://search.crossref.org/funding}, any errors may affect your future funding.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\acknowledgments{In this section you can acknowledge any support given which is not covered by the author contribution or funding sections. This may include administrative and technical support, or donations in kind (e.g., materials used for experiments).}
+\conflictsofinterest{The authors declare no conflict of interest.} 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\conflictsofinterest{Declare conflicts of interest or state ``The authors declare no conflict of interest.'' Authors must identify and declare any personal circumstances or interest that may be perceived as inappropriately influencing the representation or interpretation of reported research results. Any role of the funders in the design of the study; in the collection, analyses or interpretation of data; in the writing of the manuscript, or in the decision to publish the results must be declared in this section. If there is no role, please state ``The funders had no role in the design of the study; in the collection, analyses, or interpretation of data; in the writing of the manuscript, or in the decision to publish the results''.} 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% optional
-\abbreviations{The following abbreviations are used in this manuscript:\\
-
-\noindent 
-\begin{tabular}{@{}ll}
-MDPI & Multidisciplinary Digital Publishing Institute\\
-DOAJ & Directory of open access journals\\
-TLA & Three letter acronym\\
-LD & linear dichroism
-\end{tabular}}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% optional
-\appendixtitles{no} % Leave argument "no" if all appendix headings stay EMPTY (then no dot is printed after "Appendix A"). If the appendix sections contain a heading then change the argument to "yes".
-\appendix
-\section{}
-\unskip
-\subsection{}
-The appendix is an optional section that can contain details and data supplemental to the main text. For example, explanations of experimental details that would disrupt the flow of the main text, but nonetheless remain crucial to understanding and reproducing the research shown; figures of replicates for experiments of which representative data is shown in the main text can be added here if brief, or as Supplementary data. Mathematical proofs of results not central to the paper can be added as an appendix.
-
-\section{}
-All appendix sections must be cited in the main text. In the appendixes, Figures, Tables, etc. should be labeled starting with `A', e.g., Figure A1, Figure A2, etc. 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \reftitle{References}
